@@ -1,8 +1,20 @@
 {
   "name": "figma-make-app",
-  "private": true,
   "version": "1.0.0",
+  "private": true,
+  "description": "**Hospital Ward Round & In-Patient Record Management System**",
+  "homepage": "https://github.com/suleka-dissanayake/smart-ward#readme",
+  "bugs": {
+    "url": "https://github.com/suleka-dissanayake/smart-ward/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suleka-dissanayake/smart-ward.git"
+  },
+  "license": "ISC",
+  "author": "",
   "type": "module",
+  "main": "index.js",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
