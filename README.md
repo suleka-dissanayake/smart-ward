@@ -95,7 +95,6 @@ The app was prototyped screen-by-screen for all three roles, then built as reusa
 | Admin – Patients | Manage patient records |
 | Admin – Wards | Manage wards & beds |
 | Admin – Users | Manage doctor/nurse/admin accounts |
-| ER Diagram | Entity-relationship view of the data model |
 
 ## Data Model
 
