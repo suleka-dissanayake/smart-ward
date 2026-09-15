@@ -120,7 +120,7 @@ See [`src/types.ts`](./src/types.ts) for the full definitions.
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/smartward.git
+git clone https://github.com/suleka-dissanayake/smartward.git
 cd smartward
 
 # Install dependencies
