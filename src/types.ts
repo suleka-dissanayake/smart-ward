@@ -16,8 +16,7 @@ export type Screen =
   | 'admin-dashboard'
   | 'admin-patients'
   | 'admin-wards'
-  | 'admin-users'
-  | 'er-diagram';
+  | 'admin-users';
 
 export type PatientStatus = 'Stable' | 'Attention' | 'Critical' | 'Discharged';
 
