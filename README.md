@@ -179,8 +179,12 @@ smartward/
 
 ## Supervisor
 
-Miss. A. Ann Sinthusa — Faculty of Applied Science — University of Vavuniya
+Miss. A. Ann Sinthusa - Faculty of Applied Science - University of Vavuniya
+
+## Co-Supervisor
+
+Mr. K. Moulis - Faculty of Applied Science - University of Vavuniya
 
 ## License
 
-This project was developed for academic purposes as part of IT 3162 at University of Vavuniya.
+This project was developed for academic purposes as part of IT 3162.
