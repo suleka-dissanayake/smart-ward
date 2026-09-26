@@ -7,8 +7,8 @@
     "dev": "nodemon",
     "build": "tsc",
     "start": "node dist/index.js",
-    "seed": "ts-node src/config/seed.ts",
-    "seed:clear": "ts-node src/config/seed.ts --clear"
+    "seed": "ts-node --transpile-only src/config/seed.ts",
+    "seed:clear": "ts-node --transpile-only src/config/seed.ts --clear"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
