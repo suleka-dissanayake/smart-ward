@@ -14,6 +14,7 @@ import wardRoutes from "./routes/wards";
 import patientRoutes from "./routes/patients";
 import notificationRoutes from "./routes/notifications";
 import dashboardRoutes from "./routes/dashboard";
+import seedRoutes from "./routes/seed";
 
 const app = express();
 const PORT = process.env.PORT ?? 5000;
@@ -46,6 +47,7 @@ app.use("/api/wards", wardRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/seed", seedRoutes);
 
 // Error handling
 app.use(notFound);

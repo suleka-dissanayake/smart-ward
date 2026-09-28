@@ -28,18 +28,7 @@ router.get("/", async (req: AuthRequest, res: Response, next: NextFunction) => {
   }
 });
 
-// PATCH /api/notifications/:id/read
-router.patch("/:id/read", async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const n = await Notification.findByIdAndUpdate(req.params.id, { isRead: true }, { new: true });
-    if (!n) return next(createError("Notification not found", 404));
-    res.json({ success: true, data: n });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// PATCH /api/notifications/read-all
+// PATCH /api/notifications/read-all — must be defined BEFORE /:id routes
 router.patch("/read-all", async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     await Notification.updateMany(
@@ -50,6 +39,17 @@ router.patch("/read-all", async (req: AuthRequest, res: Response, next: NextFunc
       { isRead: true }
     );
     res.json({ success: true, message: "All notifications marked as read" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/notifications/:id/read
+router.patch("/:id/read", async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const n = await Notification.findByIdAndUpdate(req.params.id, { isRead: true }, { new: true });
+    if (!n) return next(createError("Notification not found", 404));
+    res.json({ success: true, data: n });
   } catch (err) {
     next(err);
   }

@@ -14,7 +14,7 @@ const makeBeds = (prefix: string, count: number) =>
 
 async function seed() {
   await connectDB();
-  console.log("🌱 Seeding SmartWard database...\n");
+  console.log("Seeding SmartWard database...\n");
 
   await Promise.all([
     User.deleteMany({}),
@@ -33,7 +33,7 @@ async function seed() {
     { name: "Nurse Leila Nour",     email: "leila.nour@smartward.health",       password: "nurse123",  role: "nurse",  department: "Medical Ward",      status: "Active" },
     { name: "Ibrahim Hassan",       email: "ibrahim.hassan@smartward.health",   password: "admin123",  role: "admin",  department: "Administration",    status: "Active" },
   ]);
-  console.log("✔ Users created (7)");
+  console.log("Users created (7)");
 
   // ── Wards ──────────────────────────────────────────────────────────────────
   const [medWard, surgWard, cardWard, respWard] = await Ward.create([
@@ -42,7 +42,7 @@ async function seed() {
     { name: "Cardiac Ward C",     totalBeds: 12, beds: makeBeds("C", 12) },
     { name: "Respiratory Ward D", totalBeds: 10, beds: makeBeds("D", 10) },
   ]);
-  console.log("✔ Wards created (4)");
+  console.log("Wards created (4)");
 
   // ── Patients ───────────────────────────────────────────────────────────────
   const patients = await Patient.create([
@@ -269,7 +269,7 @@ async function seed() {
       { arrayFilters: [{ "el.bedNumber": { $in: beds } }] }
     );
   }
-  console.log("✔ Bed occupancy updated");
+  console.log("Bed occupancy updated");
 
   // ── Notifications ──────────────────────────────────────────────────────────
   await Notification.create([
@@ -280,9 +280,9 @@ async function seed() {
     { title: "New Admission",     message: "Leila Basha admitted to Surgical Ward B, Bed B-07.",         type: "info",    recipientRole: "all",    createdBy: ibrahim._id },
     { title: "Ward Round Due",    message: "Dr. Yusuf Osman: Khalid Mansour ward round overdue.",        type: "alert",   recipientRole: "doctor", createdBy: ibrahim._id },
   ]);
-  console.log("✔ Notifications created (6)");
+  console.log("Notifications created (6)");
 
-  console.log("\n✅ Seed complete!\n");
+  console.log("\nSeed complete!\n");
   console.log("Login credentials");
   console.log("─────────────────────────────────────────────────────");
   console.log("Role    │ Email                              │ Password");
@@ -300,6 +300,6 @@ async function seed() {
 }
 
 seed().catch((err) => {
-  console.error("❌ Seed failed:", err.message);
+  console.error("Seed failed:", err.message);
   process.exit(1);
 });
