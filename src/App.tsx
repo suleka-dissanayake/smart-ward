@@ -19,7 +19,6 @@ import AdminDashboard from './screens/AdminDashboard';
 import AdminPatients from './screens/AdminPatients';
 import AdminWards from './screens/AdminWards';
 import AdminUsers from './screens/AdminUsers';
-import ERDiagram from './screens/ERDiagram';
 
 function AppShell() {
   const { user, loading, logout } = useAuth();
