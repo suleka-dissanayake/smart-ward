@@ -1,21 +1,12 @@
-/**
- * api.ts — SmartWard REST API client
- *
- * All requests go to the Express/MongoDB backend at VITE_API_URL
- * (default: http://localhost:5000/api).
- * The JWT token is stored in localStorage and sent via Authorization header.
- */
+// We are going to run this locally
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:5000/api";
-
-// ── Token helpers ─────────────────────────────────────────────────────────────
 const TOKEN_KEY = "smartward_token";
 
 export const getToken = (): string | null => localStorage.getItem(TOKEN_KEY);
 export const setToken = (t: string): void  => localStorage.setItem(TOKEN_KEY, t);
 export const clearToken = (): void          => localStorage.removeItem(TOKEN_KEY);
 
-// ── Core fetch wrapper ────────────────────────────────────────────────────────
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -37,7 +28,6 @@ const post   = <T>(path: string, body: unknown)   => request<T>(path, { method: 
 const patch  = <T>(path: string, body: unknown)   => request<T>(path, { method: "PATCH",  body: JSON.stringify(body) });
 const del    = <T>(path: string)                  => request<T>(path, { method: "DELETE" });
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
 export const authApi = {
   login: async (email: string, password: string): Promise<{ success: boolean; token: string; user: ApiUser }> => {
     const res = await post<{ success: boolean; token: string; user: ApiUser }>("/auth/login", { email, password });
@@ -50,12 +40,10 @@ export const authApi = {
     patch<{ success: boolean; message: string }>("/auth/change-password", { currentPassword, newPassword }),
 };
 
-// ── Dashboard ─────────────────────────────────────────────────────────────────
 export const dashboardApi = {
   stats: () => get<{ success: boolean; data: DashboardStats }>("/dashboard"),
 };
 
-// ── Patients ──────────────────────────────────────────────────────────────────
 export const patientsApi = {
   list:           (params?: Record<string, string>) =>
     get<ApiListResponse<ApiPatient>>(`/patients${params ? "?" + new URLSearchParams(params) : ""}`),
@@ -77,7 +65,6 @@ export const patientsApi = {
     post<{ success: boolean; data: ApiNursingNote }>(`/patients/${id}/nursing-notes`, body),
 };
 
-// ── Wards ─────────────────────────────────────────────────────────────────────
 export const wardsApi = {
   list:   () => get<ApiListResponse<ApiWard>>("/wards"),
   get:    (id: string) => get<{ success: boolean; data: ApiWard }>(`/wards/${id}`),
@@ -88,7 +75,6 @@ export const wardsApi = {
   remove: (id: string) => del<{ success: boolean }>(`/wards/${id}`),
 };
 
-// ── Users ─────────────────────────────────────────────────────────────────────
 export const usersApi = {
   list:    () => get<ApiListResponse<ApiUser>>("/users"),
   doctors: () => get<ApiListResponse<ApiUser>>("/users/doctors"),
@@ -101,7 +87,6 @@ export const usersApi = {
   remove:  (id: string) => del<{ success: boolean }>(`/users/${id}`),
 };
 
-// ── Notifications ─────────────────────────────────────────────────────────────
 export const notificationsApi = {
   list:        () => get<ApiListResponse<ApiNotification>>("/notifications"),
   markRead:    (id: string) => patch<{ success: boolean; data: ApiNotification }>(`/notifications/${id}/read`, {}),
@@ -110,11 +95,9 @@ export const notificationsApi = {
     post<{ success: boolean; data: ApiNotification }>("/notifications", body),
 };
 
-// ── Seed ──────────────────────────────────────────────────────────────────────
 export const seedDb = () =>
-  fetch(`${BASE_URL}/seed`, { method: "POST" }).then(r => r.json());
+  fetch(`${BASE_URL}/seed`, { method: "POST" }).then(r => r.json()); // for export to local mongodb database
 
-// ── Response types ────────────────────────────────────────────────────────────
 export interface ApiListResponse<T> {
   success: boolean;
   count: number;
