@@ -1,6 +1,6 @@
 # SmartWard
 
-**Hospital Ward Round & In-Patient Record Management System**
+**Hospital Ward Round & Patient Ticket Management System**
 
 SmartWard is a tablet-first web application that helps doctors, nurses, and ward administrators manage admitted patients from a single, organised system — replacing scattered handwritten ward charts with structured, searchable digital records.
 
