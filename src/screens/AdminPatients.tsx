@@ -1,52 +1,118 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Screen } from '../types';
-import { mockPatients, mockWards } from '../data/mockData';
+import { patientsApi, wardsApi, usersApi, type ApiPatient, type ApiWard, type ApiUser } from '../services/api';
 import StatusBadge from '../components/StatusBadge';
 
 interface Props {
   onNavigate: (screen: Screen, patientId?: string) => void;
 }
 
-export default function AdminPatients({ onNavigate }: Props) {
-  const [search, setSearch] = useState('');
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: '', age: '', gender: 'Male', ward: mockWards[0].name, bed: '', diagnosis: '', allergies: '' });
-  const [addedMsg, setAddedMsg] = useState('');
+const EMPTY_FORM = {
+  name: '', age: '', gender: 'Male', ward: '', bed: '',
+  diagnosis: '', allergies: '', admissionDate: new Date().toISOString().split('T')[0],
+  assignedDoctor: '', assignedNurse: '', status: 'Stable' as const,
+};
 
-  const filtered = mockPatients.filter(p => {
+export default function AdminPatients({ onNavigate }: Props) {
+  const [patients, setPatients]   = useState<ApiPatient[]>([]);
+  const [wards, setWards]         = useState<ApiWard[]>([]);
+  const [doctors, setDoctors]     = useState<ApiUser[]>([]);
+  const [nurses, setNurses]       = useState<ApiUser[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [search, setSearch]       = useState('');
+  const [showAdd, setShowAdd]     = useState(false);
+  const [form, setForm]           = useState({ ...EMPTY_FORM });
+  const [saving, setSaving]       = useState(false);
+  const [toast, setToast]         = useState('');
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 4000); };
+
+  useEffect(() => {
+    Promise.all([
+      patientsApi.list().then(r => setPatients(r.data)),
+      wardsApi.list().then(r => {
+        setWards(r.data);
+        if (r.data.length > 0) setForm(f => ({ ...f, ward: r.data[0]._id }));
+      }),
+      usersApi.doctors().then(r => {
+        setDoctors(r.data);
+        if (r.data.length > 0) setForm(f => ({ ...f, assignedDoctor: r.data[0]._id }));
+      }),
+      usersApi.nurses().then(r => {
+        setNurses(r.data);
+        if (r.data.length > 0) setForm(f => ({ ...f, assignedNurse: r.data[0]._id }));
+      }),
+    ])
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = patients.filter(p => {
     const q = search.toLowerCase();
-    return !q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
+    return !q || p.name.toLowerCase().includes(q) || p._id.toLowerCase().includes(q);
   });
 
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowAdd(false);
-    setAddedMsg(`Patient "${form.name}" registered successfully.`);
-    setForm({ name: '', age: '', gender: 'Male', ward: mockWards[0].name, bed: '', diagnosis: '', allergies: '' });
-    setTimeout(() => setAddedMsg(''), 4000);
+  const wardName = (p: ApiPatient) => {
+    const w = p.ward;
+    return typeof w === 'object' && w !== null ? (w as { name: string }).name : String(w);
   };
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await patientsApi.create({
+        name: form.name, age: Number(form.age),
+        gender: form.gender as 'Male' | 'Female',
+        ward: form.ward, bed: form.bed,
+        admissionDate: form.admissionDate,
+        diagnosis: form.diagnosis,
+        allergies: form.allergies ? form.allergies.split(',').map(s => s.trim()).filter(Boolean) : [],
+        assignedDoctor: form.assignedDoctor,
+        assignedNurse: form.assignedNurse,
+        status: form.status,
+      });
+      setPatients(prev => [res.data, ...prev]);
+      showToast(`Patient "${res.data.name}" registered successfully.`);
+      setShowAdd(false);
+      setForm({ ...EMPTY_FORM, ward: wards[0]?._id ?? '', assignedDoctor: doctors[0]?._id ?? '', assignedNurse: nurses[0]?._id ?? '' });
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to register patient');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-slate-50">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Patient Management</h1>
-          <p className="text-sm text-slate-500 mt-0.5">{mockPatients.length} registered patients</p>
+          <p className="text-sm text-slate-500 mt-0.5">{patients.length} registered patients</p>
         </div>
         <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
           + Register Patient
         </button>
       </div>
 
-      {addedMsg && (
-        <div className="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-3 rounded-xl border border-green-200 text-sm">
-          ✓ {addedMsg}
+      {toast && (
+        <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm ${toast.includes('Failed') ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
+          {toast.includes('Failed') ? '✗' : '✓'} {toast}
         </div>
       )}
 
+      {/* Add Patient Modal */}
       {showAdd && (
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-slate-900">Register New Patient</h2>
               <button onClick={() => setShowAdd(false)} className="text-slate-400 hover:text-slate-600 text-xl">×</button>
@@ -60,7 +126,7 @@ export default function AdminPatients({ onNavigate }: Props) {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">Age</label>
-                  <input required type="number" value={form.age} onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
+                  <input required type="number" min="0" value={form.age} onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
                     className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
@@ -74,12 +140,31 @@ export default function AdminPatients({ onNavigate }: Props) {
                   <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">Ward</label>
                   <select value={form.ward} onChange={e => setForm(f => ({ ...f, ward: e.target.value }))}
                     className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    {mockWards.map(w => <option key={w.id}>{w.name}</option>)}
+                    {wards.map(w => <option key={w._id} value={w._id}>{w.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">Bed Number</label>
                   <input required value={form.bed} onChange={e => setForm(f => ({ ...f, bed: e.target.value }))} placeholder="e.g. A-05"
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">Assigned Doctor</label>
+                  <select value={form.assignedDoctor} onChange={e => setForm(f => ({ ...f, assignedDoctor: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    {doctors.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">Assigned Nurse</label>
+                  <select value={form.assignedNurse} onChange={e => setForm(f => ({ ...f, assignedNurse: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    {nurses.map(n => <option key={n._id} value={n._id}>{n.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">Admission Date</label>
+                  <input required type="date" value={form.admissionDate} onChange={e => setForm(f => ({ ...f, admissionDate: e.target.value }))}
                     className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div className="col-span-2">
@@ -95,7 +180,9 @@ export default function AdminPatients({ onNavigate }: Props) {
               </div>
               <div className="flex gap-2 pt-2">
                 <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-50">Cancel</button>
-                <button type="submit" className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700">Register Patient</button>
+                <button type="submit" disabled={saving} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60">
+                  {saving ? 'Registering...' : 'Register Patient'}
+                </button>
               </div>
             </form>
           </div>
@@ -115,30 +202,30 @@ export default function AdminPatients({ onNavigate }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/80">
-              {['Patient', 'ID', 'Ward / Bed', 'Diagnosis', 'Admitted', 'Status', ''].map(h => (
+              {['Patient', 'Ward / Bed', 'Diagnosis', 'Admitted', 'Status', ''].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {filtered.map(p => (
-              <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+            {filtered.length === 0 ? (
+              <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-400">No patients found</td></tr>
+            ) : filtered.map(p => (
+              <tr key={p._id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-4 py-3.5">
                   <div className="font-semibold text-slate-900 text-sm">{p.name}</div>
                   <div className="text-xs text-slate-400">{p.age}y · {p.gender}</div>
                 </td>
-                <td className="px-4 py-3.5 font-mono text-xs text-slate-600">{p.id}</td>
                 <td className="px-4 py-3.5">
-                  <div className="text-xs font-semibold text-slate-700">{p.ward}</div>
+                  <div className="text-xs font-semibold text-slate-700">{wardName(p)}</div>
                   <div className="font-mono text-xs text-slate-500">Bed {p.bed}</div>
                 </td>
                 <td className="px-4 py-3.5 text-xs text-slate-600 max-w-[180px] truncate">{p.diagnosis}</td>
-                <td className="px-4 py-3.5 text-xs text-slate-600">{p.admissionDate}</td>
+                <td className="px-4 py-3.5 text-xs text-slate-600">{new Date(p.admissionDate).toLocaleDateString('en-GB')}</td>
                 <td className="px-4 py-3.5"><StatusBadge status={p.status} /></td>
                 <td className="px-4 py-3.5">
                   <div className="flex gap-1.5">
-                    <button onClick={() => onNavigate('patient-profile', p.id)} className="px-2.5 py-1 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700">View</button>
-                    <button className="px-2.5 py-1 text-xs font-semibold border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">Edit</button>
+                    <button onClick={() => onNavigate('patient-profile', p._id)} className="px-2.5 py-1 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700">View</button>
                   </div>
                 </td>
               </tr>

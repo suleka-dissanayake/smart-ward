@@ -109,8 +109,6 @@ function AppShell() {
         return <AdminWards onNavigate={navigate} />;
       case 'admin-users':
         return <AdminUsers />;
-      case 'er-diagram':
-        return <ERDiagram />;
       default:
         return <DoctorDashboard user={user} onNavigate={navigate} />;
     }

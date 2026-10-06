@@ -1,6 +1,6 @@
 # SmartWard
 
-**Hospital Ward Round & Ticket Management System**
+**Hospital Ward Round & In-Patient Record Management System**
 
 SmartWard is a tablet-first web application that helps doctors, nurses, and ward administrators manage admitted patients from a single, organised system — replacing scattered handwritten ward charts with structured, searchable digital records.
 
@@ -53,6 +53,7 @@ SmartWard focuses on digitising the **ward-round workflow**: vital signs, medica
 - 📝 **Nursing notes** — time-stamped notes logged by nursing staff
 - 🔔 **Notifications** — medications due, vitals due, and pending ward rounds
 - 🔐 **Role-based access** — separate, purpose-built workflows for Doctors, Nurses, and Administrators
+- 🖥️ **Admin panel** — manage patients, wards/beds, and user accounts
 
 ## User Roles
 
@@ -179,12 +180,8 @@ smartward/
 
 ## Supervisor
 
-Miss. A. Ann Sinthusa - Faculty of Applied Science - University of Vavuniya
-
-## Co-Supervisor
-
-Mr. K. Moulis - Faculty of Applied Science - University of Vavuniya
+Miss. A. Ann Sinthusa — Faculty of Applied Science — University of Vavuniya
 
 ## License
 
-This project was developed for academic purposes as part of IT 3162.
+This project was developed for academic purposes as part of IT 3162 at University of Vavuniya.

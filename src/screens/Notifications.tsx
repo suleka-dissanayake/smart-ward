@@ -8,12 +8,12 @@ interface Props {
 }
 
 const FALLBACK: ApiNotification[] = [
-  { id: '1', _id: '1', type: 'critical', recipient_role: 'doctor', is_read: false, created_at: new Date().toISOString(), title: 'Critical Alert',    message: "Khalid Mansour SpO2 is 90% — requires immediate review" },
-  { id: '2', _id: '2', type: 'alert',    recipient_role: 'doctor', is_read: false, created_at: new Date().toISOString(), title: 'Attention Patient', message: "Mohammed Al-Rashidi BP remains elevated at 158/96 mmHg" },
-  { id: '3', _id: '3', type: 'task',     recipient_role: 'nurse',  is_read: false, created_at: new Date().toISOString(), title: 'Medication Due',    message: "Omar Yusuf: Salbutamol nebulisation due at 10:00" },
-  { id: '4', _id: '4', type: 'task',     recipient_role: 'nurse',  is_read: false, created_at: new Date().toISOString(), title: 'Medication Due',    message: "Mohammed Al-Rashidi: Amlodipine & Metformin due at 20:00" },
-  { id: '5', _id: '5', type: 'info',     recipient_role: 'all',    is_read: true,  created_at: new Date().toISOString(), title: 'New Admission',     message: "Leila Basha admitted to Surgical Ward B, Bed B-07" },
-  { id: '6', _id: '6', type: 'alert',    recipient_role: 'doctor', is_read: false, created_at: new Date().toISOString(), title: 'Ward Round Due',    message: "Dr. Yusuf Osman: Khalid Mansour ward round overdue" },
+  { id: '1', _id: '1', type: 'critical', recipientRole: 'doctor', isRead: false, createdAt: new Date().toISOString(), title: 'Critical Alert',    message: 'Khalid Mansour SpO2 is 90% — requires immediate review' },
+  { id: '2', _id: '2', type: 'alert',    recipientRole: 'doctor', isRead: false, createdAt: new Date().toISOString(), title: 'Attention Patient', message: 'Mohammed Al-Rashidi BP remains elevated at 158/96 mmHg' },
+  { id: '3', _id: '3', type: 'task',     recipientRole: 'nurse',  isRead: false, createdAt: new Date().toISOString(), title: 'Medication Due',    message: 'Omar Yusuf: Salbutamol nebulisation due at 10:00' },
+  { id: '4', _id: '4', type: 'task',     recipientRole: 'nurse',  isRead: false, createdAt: new Date().toISOString(), title: 'Medication Due',    message: 'Mohammed Al-Rashidi: Amlodipine & Metformin due at 20:00' },
+  { id: '5', _id: '5', type: 'info',     recipientRole: 'all',    isRead: true,  createdAt: new Date().toISOString(), title: 'New Admission',     message: 'Leila Basha admitted to Surgical Ward B, Bed B-07' },
+  { id: '6', _id: '6', type: 'alert',    recipientRole: 'doctor', isRead: false, createdAt: new Date().toISOString(), title: 'Ward Round Due',    message: 'Dr. Yusuf Osman: Khalid Mansour ward round overdue' },
 ];
 
 const typeStyle: Record<string, string> = {
@@ -49,7 +49,7 @@ export default function Notifications({ onNavigate, onUnreadCountChange }: Props
   }, []);
 
   useEffect(() => {
-    const unread = notifications.filter(n => !n.is_read).length;
+    const unread = notifications.filter(n => !n.isRead).length;
     onUnreadCountChange?.(unread);
   }, [notifications, onUnreadCountChange]);
 
@@ -57,17 +57,17 @@ export default function Notifications({ onNavigate, onUnreadCountChange }: Props
     try {
       await notificationsApi.markRead(id);
     } catch { /* offline */ }
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
   };
 
   const markAllRead = async () => {
     try {
       await notificationsApi.markAllRead();
     } catch { /* offline */ }
-    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
 
-  const unread = notifications.filter(n => !n.is_read);
+  const unread = notifications.filter(n => !n.isRead);
 
   if (loading) {
     return (
@@ -78,9 +78,9 @@ export default function Notifications({ onNavigate, onUnreadCountChange }: Props
   }
 
   const counts = {
-    critical: notifications.filter(n => n.type === 'critical' && !n.is_read).length,
-    alert:    notifications.filter(n => n.type === 'alert'    && !n.is_read).length,
-    task:     notifications.filter(n => n.type === 'task'     && !n.is_read).length,
+    critical: notifications.filter(n => n.type === 'critical' && !n.isRead).length,
+    alert:    notifications.filter(n => n.type === 'alert'    && !n.isRead).length,
+    task:     notifications.filter(n => n.type === 'task'     && !n.isRead).length,
   };
 
   return (
@@ -113,11 +113,11 @@ export default function Notifications({ onNavigate, onUnreadCountChange }: Props
       <div className="space-y-3">
         {notifications.map(n => (
           <div
-            key={n.id}
-            className={`bg-white rounded-xl shadow-sm p-4 ${typeStyle[n.type] ?? typeStyle.info} transition-all ${n.is_read ? 'opacity-60' : 'hover:shadow-md cursor-pointer'}`}
+            key={n._id}
+            className={`bg-white rounded-xl shadow-sm p-4 ${typeStyle[n.type] ?? typeStyle.info} transition-all ${n.isRead ? 'opacity-60' : 'hover:shadow-md cursor-pointer'}`}
             onClick={() => {
-              if (!n.is_read) markRead(n.id);
-              if (n.patient) onNavigate('patient-profile', n.patient.id);
+              if (!n.isRead) markRead(n._id);
+              if (n.patient) onNavigate('patient-profile', n.patient._id);
             }}
           >
             <div className="flex items-start gap-3">
@@ -128,14 +128,14 @@ export default function Notifications({ onNavigate, onUnreadCountChange }: Props
                     {n.title}
                   </span>
                   <span className="text-[10px] text-slate-400">
-                    · {new Date(n.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                    · {new Date(n.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                   </span>
-                  {n.is_read && <span className="text-[10px] text-slate-400 ml-auto">Read</span>}
+                  {n.isRead && <span className="text-[10px] text-slate-400 ml-auto">Read</span>}
                 </div>
                 <p className="text-sm text-slate-700">{n.message}</p>
                 {n.patient && (
                   <button
-                    onClick={e => { e.stopPropagation(); if (!n.is_read) markRead(n.id); onNavigate('patient-profile', n.patient!.id); }}
+                    onClick={e => { e.stopPropagation(); if (!n.isRead) markRead(n._id); onNavigate('patient-profile', n.patient!._id); }}
                     className="mt-2 text-xs text-blue-600 font-medium hover:underline"
                   >
                     View Patient →

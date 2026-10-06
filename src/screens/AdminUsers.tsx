@@ -26,7 +26,7 @@ export default function AdminUsers() {
   useEffect(() => {
     usersApi.list()
       .then(res => setUsers(res.data))
-      .catch(() => setUsers(mockUsers.map(u => ({ _id: u.id, name: u.name, email: u.email, role: u.role, department: u.department, status: u.status }))))
+      .catch(() => setUsers(mockUsers.map(u => ({ _id: u.id, id: u.id, name: u.name, email: u.email, role: u.role, department: u.department, status: u.status }))))
       .finally(() => setLoading(false));
   }, []);
 

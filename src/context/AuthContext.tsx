@@ -1,31 +1,24 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { supabase, authApi, seedDb } from "../services/supabase";
+import { authApi, getToken, clearToken, type ApiUser } from "../services/api";
 import type { AppUser, UserRole } from "../types";
 
 interface AuthState {
   user: AppUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  quickLogin: (user: AppUser) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
 
-async function fetchProfile(userId: string): Promise<AppUser | null> {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, name, email, role, department, status")
-    .eq("id", userId)
-    .single();
-  if (error || !data) return null;
+function apiUserToAppUser(u: ApiUser): AppUser {
   return {
-    id: data.id,
-    name: data.name,
-    email: data.email,
-    role: data.role as UserRole,
-    department: data.department,
-    status: data.status,
+    id: u._id,
+    name: u.name,
+    email: u.email,
+    role: u.role as UserRole,
+    department: u.department,
+    status: u.status,
   };
 }
 
@@ -33,38 +26,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser]       = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Restore session on mount if a token exists
   useEffect(() => {
-    // Restore session on mount
-    authApi.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const profile = await fetchProfile(session.user.id);
-        setUser(profile);
-      }
+    if (!getToken()) {
       setLoading(false);
-    });
-
-    // Listen for auth state changes
-    const { data: { subscription } } = authApi.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const profile = await fetchProfile(session.user.id);
-        setUser(profile);
-      } else {
+      return;
+    }
+    authApi
+      .me()
+      .then(res => setUser(apiUserToAppUser(res.user)))
+      .catch(() => {
+        clearToken();
         setUser(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const { error } = await authApi.login(email, password);
-    if (error) throw new Error(error.message);
-    // Profile is loaded via onAuthStateChange above
-  }, []);
-
-  // Demo offline bypass — skips Supabase auth
-  const quickLogin = useCallback((u: AppUser) => {
-    setUser(u);
+    const res = await authApi.login(email, password);
+    setUser(apiUserToAppUser(res.user));
   }, []);
 
   const logout = useCallback(() => {
@@ -73,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, quickLogin, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -84,6 +64,3 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }
-
-// Expose seedDb for use in Login quick-access
-export { seedDb };

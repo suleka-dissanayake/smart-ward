@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { useAuth, seedDb } from '../context/AuthContext';
-import type { AppUser } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 const DEMO_ACCOUNTS = [
-  { label: 'Doctor',  sub: 'Dr. Ahmed',   email: 'ahmed.alfarouk@smartward.health',  password: 'doctor123', role: 'doctor' as const },
-  { label: 'Nurse',   sub: 'Nurse Aisha', email: 'aisha.karimi@smartward.health',    password: 'nurse123',  role: 'nurse'  as const },
-  { label: 'Admin',   sub: 'Ibrahim',     email: 'ibrahim.hassan@smartward.health',  password: 'admin123',  role: 'admin'  as const },
+  { label: 'Doctor', sub: 'Dr. Ahmed',   email: 'ahmed.alfarouk@smartward.health', password: 'doctor123' },
+  { label: 'Nurse',  sub: 'Nurse Aisha', email: 'aisha.karimi@smartward.health',   password: 'nurse123'  },
+  { label: 'Admin',  sub: 'Ibrahim',     email: 'ibrahim.hassan@smartward.health', password: 'admin123'  },
 ];
 
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:5000/api';
+
 export default function Login() {
-  const { login, quickLogin } = useAuth();
+  const { login }               = useAuth();
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
@@ -34,17 +35,8 @@ export default function Login() {
     setError('');
     try {
       await login(acct.email, acct.password);
-    } catch {
-      // Supabase unreachable or user not seeded — use offline demo
-      const demoUser: AppUser = {
-        id: acct.role === 'doctor' ? 'D001' : acct.role === 'nurse' ? 'N001' : 'A001',
-        name: acct.role === 'doctor' ? 'Dr. Ahmed Al-Farouk' : acct.role === 'nurse' ? 'Nurse Aisha Karimi' : 'Ibrahim Hassan',
-        email: acct.email, role: acct.role,
-        department: acct.role === 'doctor' ? 'Internal Medicine' : acct.role === 'nurse' ? 'Medical Ward' : 'Administration',
-        status: 'Active',
-      };
-      quickLogin(demoUser);
-    } finally {
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Login failed — make sure the backend is running and the database is seeded.');
       setLoading(false);
     }
   };
@@ -53,10 +45,11 @@ export default function Login() {
     setSeeding(true);
     setSeedMsg('');
     try {
-      const res = await seedDb();
-      setSeedMsg(res.message ?? 'Seed complete!');
+      const res = await fetch(`${API_BASE}/seed`, { method: 'POST' });
+      const json = await res.json();
+      setSeedMsg(json.message ?? 'Database seeded successfully!');
     } catch {
-      setSeedMsg('Seed failed — check edge function deployment.');
+      setSeedMsg('Seed failed — make sure the backend is running on http://localhost:5000');
     } finally {
       setSeeding(false);
     }
@@ -85,7 +78,7 @@ export default function Login() {
             Digital Ward<br />Management<br />System
           </h1>
           <p className="text-blue-200 text-sm mt-6 leading-relaxed">
-            Powered by Supabase — real-time data, secure auth, and persistent records.
+            Powered by MongoDB &amp; Express — secure JWT auth, real-time patient records.
           </p>
         </div>
 
@@ -93,7 +86,7 @@ export default function Login() {
         <div className="relative z-10">
           <div className="bg-white/10 rounded-xl p-4 border border-white/20">
             <p className="text-xs text-blue-200 mb-2 font-semibold">First time setup</p>
-            <p className="text-xs text-blue-100 mb-3">Click to populate the database with demo patients, wards, and staff.</p>
+            <p className="text-xs text-blue-100 mb-3">Populate the database with demo patients, wards, and staff.</p>
             <button
               onClick={handleSeed}
               disabled={seeding}
@@ -166,7 +159,7 @@ export default function Login() {
               <div className="grid grid-cols-3 gap-2">
                 {DEMO_ACCOUNTS.map(acct => (
                   <button
-                    key={acct.role}
+                    key={acct.label}
                     onClick={() => handleQuickLogin(acct)}
                     disabled={loading}
                     className="flex flex-col items-center p-3 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-all disabled:opacity-50"
@@ -177,7 +170,7 @@ export default function Login() {
                 ))}
               </div>
               <p className="text-[10px] text-slate-400 text-center mt-2">
-                Seed demo data first, then sign in. Falls back to offline mode if Supabase is unavailable.
+                Seed demo data first, then sign in.
               </p>
             </div>
 

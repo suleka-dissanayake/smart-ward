@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import type { Screen } from '../types';
-import { mockPatients } from '../data/mockData';
 import { patientsApi, type ApiPatient } from '../services/api';
 import StatusBadge from '../components/StatusBadge';
 
@@ -16,18 +15,15 @@ function wardName(p: ApiPatient): string {
 export default function PatientList({ onNavigate }: Props) {
   const [patients, setPatients] = useState<ApiPatient[]>([]);
   const [loading, setLoading]   = useState(true);
-  const [apiError, setApiError] = useState(false);
-  const [search, setSearch]       = useState('');
+  const [error, setError]       = useState('');
+  const [search, setSearch]         = useState('');
   const [wardFilter, setWardFilter]     = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
 
   useEffect(() => {
     patientsApi.list()
       .then(res => setPatients(res.data))
-      .catch(() => {
-        setApiError(true);
-        setPatients(mockPatients.map(p => ({ ...p, _id: p.id, ward: p.ward, vitals: [p.vitals as never], medications: p.medications as never, wardRounds: p.wardRounds as never, nursingNotes: p.nursingNotes as never, assignedDoctor: p.assignedDoctor, assignedNurse: p.assignedNurse })) as unknown as ApiPatient[]);
-      })
+      .catch(() => setError('Failed to load patients. Make sure the backend is running.'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -56,9 +52,9 @@ export default function PatientList({ onNavigate }: Props) {
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 p-6 space-y-5">
-      {apiError && (
-        <div className="flex items-center gap-2 bg-amber-50 text-amber-700 text-xs px-4 py-2.5 rounded-lg border border-amber-200">
-          <span>⚠</span> Backend offline — showing demo data.
+      {error && (
+        <div className="flex items-center gap-2 bg-red-50 text-red-700 text-xs px-4 py-2.5 rounded-lg border border-red-200">
+          <span>⚠</span> {error}
         </div>
       )}
 

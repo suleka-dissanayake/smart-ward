@@ -31,7 +31,7 @@ export default function AdminWards({ onNavigate }: Props) {
       .catch(() => {
         setUsingMock(true);
         const fallback: ApiWard[] = mockWards.map(w => ({
-          _id: w.id, name: w.name, totalBeds: w.totalBeds,
+          _id: w.id, id: w.id, name: w.name, totalBeds: w.totalBeds,
           occupiedBeds: w.occupiedBeds, beds: [],
         }));
         setWards(fallback);
@@ -48,7 +48,7 @@ export default function AdminWards({ onNavigate }: Props) {
         name: form.name.trim(),
         totalBeds: Number(form.totalBeds),
         description: form.description.trim() || undefined,
-      } as Partial<ApiWard>);
+      });
       setWards(prev => [...prev, res.data]);
       setSelectedId(res.data._id);
       showToast(`Ward "${res.data.name}" added successfully.`);
