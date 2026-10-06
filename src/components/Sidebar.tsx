@@ -42,7 +42,6 @@ export default function Sidebar({ role, currentScreen, userName, onNavigate, onL
 
   return (
     <aside className="flex flex-col w-[220px] min-w-[220px] h-full bg-white border-r border-slate-200">
-      {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
         <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1565C0 0%, #00796B 100%)' }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -55,14 +54,12 @@ export default function Sidebar({ role, currentScreen, userName, onNavigate, onL
         </div>
       </div>
 
-      {/* Role badge */}
       <div className="px-5 py-3 border-b border-slate-100">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
           {role === 'admin' ? 'Administrator' : role === 'doctor' ? 'Doctor Portal' : 'Nurse Portal'}
         </span>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {nav.map(item => {
           const active = currentScreen === item.id;
@@ -88,7 +85,6 @@ export default function Sidebar({ role, currentScreen, userName, onNavigate, onL
         })}
       </nav>
 
-      {/* User */}
       <div className="px-4 py-4 border-t border-slate-100">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center flex-shrink-0">

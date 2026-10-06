@@ -8,7 +8,6 @@ import { protect, AuthRequest } from "../middleware/auth";
 const router = Router();
 router.use(protect);
 
-// GET /api/dashboard — role-aware summary stats
 router.get("/", async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const role = req.user!.role;

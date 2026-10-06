@@ -1,3 +1,5 @@
+// One-click seeding to mongoDB database instantly
+
 import "dotenv/config";
 import mongoose from "mongoose";
 import { connectDB } from "./db";
@@ -23,7 +25,6 @@ async function seed() {
     Notification.deleteMany({}),
   ]);
 
-  // ── Users ──────────────────────────────────────────────────────────────────
   const [ahmed, sarah, yusuf, aisha, james, leila, ibrahim] = await User.create([
     { name: "Dr. Ahmed Al-Farouk",  email: "ahmed.alfarouk@smartward.health",  password: "doctor123", role: "doctor", department: "Internal Medicine", status: "Active" },
     { name: "Dr. Sarah Mitchell",   email: "sarah.mitchell@smartward.health",   password: "doctor123", role: "doctor", department: "Surgery",           status: "Active" },
@@ -35,7 +36,6 @@ async function seed() {
   ]);
   console.log("Users created (7)");
 
-  // ── Wards ──────────────────────────────────────────────────────────────────
   const [medWard, surgWard, cardWard, respWard] = await Ward.create([
     { name: "Medical Ward A",     totalBeds: 20, beds: makeBeds("A", 20) },
     { name: "Surgical Ward B",    totalBeds: 16, beds: makeBeds("B", 16) },
@@ -44,9 +44,7 @@ async function seed() {
   ]);
   console.log("Wards created (4)");
 
-  // ── Patients ───────────────────────────────────────────────────────────────
   const patients = await Patient.create([
-    // P-10042 Mohammed Al-Rashidi
     {
       name: "Mohammed Al-Rashidi", age: 67, gender: "Male",
       ward: medWard._id, bed: "A-04", admissionDate: new Date("2026-08-10"),
@@ -100,7 +98,6 @@ async function seed() {
       ],
     },
 
-    // P-10078 Fatima Hassan
     {
       name: "Fatima Hassan", age: 45, gender: "Female",
       ward: surgWard._id, bed: "B-12", admissionDate: new Date("2026-08-14"),
@@ -136,7 +133,6 @@ async function seed() {
       ],
     },
 
-    // P-10091 Omar Yusuf
     {
       name: "Omar Yusuf", age: 52, gender: "Male",
       ward: respWard._id, bed: "D-03", admissionDate: new Date("2026-08-13"),
@@ -176,7 +172,6 @@ async function seed() {
       ],
     },
 
-    // P-10103 Sarah Al-Zahra
     {
       name: "Sarah Al-Zahra", age: 38, gender: "Female",
       ward: medWard._id, bed: "A-11", admissionDate: new Date("2026-08-15"),
@@ -200,7 +195,6 @@ async function seed() {
       wardRounds: [], nursingNotes: [],
     },
 
-    // P-10057 Khalid Mansour
     {
       name: "Khalid Mansour", age: 71, gender: "Male",
       ward: cardWard._id, bed: "C-06", admissionDate: new Date("2026-08-08"),
@@ -230,7 +224,6 @@ async function seed() {
       wardRounds: [], nursingNotes: [],
     },
 
-    // P-10115 Leila Basha
     {
       name: "Leila Basha", age: 29, gender: "Female",
       ward: surgWard._id, bed: "B-07", admissionDate: new Date("2026-08-16"),
@@ -253,9 +246,8 @@ async function seed() {
       wardRounds: [], nursingNotes: [],
     },
   ]);
-  console.log(`✔ Patients created (${patients.length})`);
+  console.log(`Patients created (${patients.length})`);
 
-  // ── Mark occupied beds in wards ────────────────────────────────────────────
   const bedUpdates = [
     { ward: medWard._id,  beds: ["A-04", "A-11"] },
     { ward: surgWard._id, beds: ["B-07", "B-12"] },
@@ -271,7 +263,6 @@ async function seed() {
   }
   console.log("Bed occupancy updated");
 
-  // ── Notifications ──────────────────────────────────────────────────────────
   await Notification.create([
     { title: "Critical Alert",    message: "Khalid Mansour: SpO2 dropped to 90% — immediate review required.", type: "critical", recipientRole: "doctor", createdBy: ibrahim._id },
     { title: "Attention Patient", message: "Mohammed Al-Rashidi BP remains elevated at 158/96 mmHg.", type: "alert",    recipientRole: "doctor", createdBy: ibrahim._id },

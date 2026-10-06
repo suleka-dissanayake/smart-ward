@@ -26,7 +26,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser]       = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Restore session on mount if a token exists
   useEffect(() => {
     if (!getToken()) {
       setLoading(false);

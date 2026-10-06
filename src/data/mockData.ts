@@ -1,3 +1,5 @@
+// Just the demo data to test whether it is running corectly
+
 import type { Patient, AppUser, Ward } from '../types';
 
 export const mockUsers: AppUser[] = [

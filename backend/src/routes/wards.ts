@@ -7,7 +7,6 @@ import { createError } from "../middleware/errorHandler";
 const router = Router();
 router.use(protect);
 
-// GET /api/wards
 router.get("/", async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const wards = await Ward.find().sort({ name: 1 });
@@ -17,7 +16,6 @@ router.get("/", async (_req: AuthRequest, res: Response, next: NextFunction) => 
   }
 });
 
-// GET /api/wards/:id
 router.get("/:id", async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const ward = await Ward.findById(req.params.id).populate("beds.patientId", "name status");
@@ -28,7 +26,6 @@ router.get("/:id", async (req: AuthRequest, res: Response, next: NextFunction) =
   }
 });
 
-// POST /api/wards — admin only
 router.post(
   "/",
   authorize("admin"),
@@ -51,7 +48,6 @@ router.post(
   }
 );
 
-// PATCH /api/wards/:id
 router.patch("/:id", authorize("admin"), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const ward = await Ward.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
@@ -62,7 +58,6 @@ router.patch("/:id", authorize("admin"), async (req: AuthRequest, res: Response,
   }
 });
 
-// DELETE /api/wards/:id
 router.delete("/:id", authorize("admin"), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const ward = await Ward.findById(req.params.id);

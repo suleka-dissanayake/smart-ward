@@ -10,7 +10,6 @@ const router = Router();
 const signToken = (id: string, role: string): string =>
   jwt.sign({ id, role }, process.env.JWT_SECRET!, { expiresIn: (process.env.JWT_EXPIRES_IN ?? "7d") as unknown as number });
 
-// POST /api/auth/login
 router.post(
   "/login",
   [
@@ -41,12 +40,10 @@ router.post(
   }
 );
 
-// GET /api/auth/me
 router.get("/me", protect, async (req: AuthRequest, res: Response) => {
   res.json({ success: true, user: req.user });
 });
 
-// PATCH /api/auth/change-password
 router.patch(
   "/change-password",
   protect,

@@ -7,7 +7,6 @@ import { createError } from "../middleware/errorHandler";
 const router = Router();
 router.use(protect);
 
-// GET /api/users — admin only
 router.get("/", authorize("admin"), async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const users = await User.find().sort({ createdAt: -1 });
@@ -17,7 +16,6 @@ router.get("/", authorize("admin"), async (_req: AuthRequest, res: Response, nex
   }
 });
 
-// GET /api/users/doctors — for patient assignment dropdowns
 router.get("/doctors", async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const doctors = await User.find({ role: "doctor", status: "Active" }).select("name department");
@@ -27,7 +25,6 @@ router.get("/doctors", async (_req: AuthRequest, res: Response, next: NextFuncti
   }
 });
 
-// GET /api/users/nurses
 router.get("/nurses", async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const nurses = await User.find({ role: "nurse", status: "Active" }).select("name department");
@@ -37,7 +34,6 @@ router.get("/nurses", async (_req: AuthRequest, res: Response, next: NextFunctio
   }
 });
 
-// GET /api/users/:id
 router.get("/:id", authorize("admin"), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const user = await User.findById(req.params.id);
@@ -48,7 +44,6 @@ router.get("/:id", authorize("admin"), async (req: AuthRequest, res: Response, n
   }
 });
 
-// POST /api/users — admin creates users
 router.post(
   "/",
   authorize("admin"),
@@ -75,7 +70,6 @@ router.post(
   }
 );
 
-// PATCH /api/users/:id
 router.patch("/:id", authorize("admin"), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { password, ...updates } = req.body;
@@ -87,7 +81,6 @@ router.patch("/:id", authorize("admin"), async (req: AuthRequest, res: Response,
   }
 });
 
-// DELETE /api/users/:id
 router.delete("/:id", authorize("admin"), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);

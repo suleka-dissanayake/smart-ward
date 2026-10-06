@@ -7,14 +7,8 @@ import Notification from "../models/Notification";
 
 const router = Router();
 
-/**
- * POST /api/seed
- * Idempotent seed endpoint — clears and re-creates demo data.
- * Only intended for development / first-time setup.
- */
 router.post("/", async (_req: Request, res: Response) => {
   try {
-    // Clear existing data
     await Promise.all([
       User.deleteMany({}),
       Ward.deleteMany({}),
@@ -28,7 +22,6 @@ router.post("/", async (_req: Request, res: Response) => {
         isOccupied: false,
       }));
 
-    // ── Users ────────────────────────────────────────────────────────────────
     const [ahmed, sarah, yusuf, aisha, james, leila, ibrahim] = await User.create([
       { name: "Dr. Ahmed Al-Farouk",  email: "ahmed.alfarouk@smartward.health",  password: "doctor123", role: "doctor", department: "Internal Medicine", status: "Active" },
       { name: "Dr. Sarah Mitchell",   email: "sarah.mitchell@smartward.health",   password: "doctor123", role: "doctor", department: "Surgery",           status: "Active" },
@@ -39,7 +32,6 @@ router.post("/", async (_req: Request, res: Response) => {
       { name: "Ibrahim Hassan",       email: "ibrahim.hassan@smartward.health",   password: "admin123",  role: "admin",  department: "Administration",    status: "Active" },
     ]);
 
-    // ── Wards ────────────────────────────────────────────────────────────────
     const [medWard, surgWard, cardWard, respWard] = await Ward.create([
       { name: "Medical Ward A",     totalBeds: 20, beds: makeBeds("A", 20) },
       { name: "Surgical Ward B",    totalBeds: 16, beds: makeBeds("B", 16) },
@@ -47,7 +39,6 @@ router.post("/", async (_req: Request, res: Response) => {
       { name: "Respiratory Ward D", totalBeds: 10, beds: makeBeds("D", 10) },
     ]);
 
-    // ── Patients ─────────────────────────────────────────────────────────────
     await Patient.create([
       {
         name: "Mohammed Al-Rashidi", age: 67, gender: "Male",
@@ -119,7 +110,6 @@ router.post("/", async (_req: Request, res: Response) => {
       },
     ]);
 
-    // ── Mark occupied beds ────────────────────────────────────────────────────
     const bedUpdates = [
       { ward: medWard._id,  beds: ["A-04", "A-11"] },
       { ward: surgWard._id, beds: ["B-07", "B-12"] },
@@ -130,7 +120,6 @@ router.post("/", async (_req: Request, res: Response) => {
       await Ward.updateOne({ _id: ward }, { $set: { "beds.$[el].isOccupied": true } }, { arrayFilters: [{ "el.bedNumber": { $in: beds } }] });
     }
 
-    // ── Notifications ─────────────────────────────────────────────────────────
     await Notification.create([
       { title: "Critical Alert",    message: "Khalid Mansour: SpO2 dropped to 90% — immediate review required.", type: "critical", recipientRole: "doctor", createdBy: ibrahim._id },
       { title: "Attention Patient", message: "Mohammed Al-Rashidi BP remains elevated at 158/96 mmHg.",         type: "alert",    recipientRole: "doctor", createdBy: ibrahim._id },

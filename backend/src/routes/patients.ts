@@ -8,7 +8,6 @@ import { createError } from "../middleware/errorHandler";
 const router = Router();
 router.use(protect);
 
-// GET /api/patients
 router.get("/", async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const filter: Record<string, unknown> = {};
