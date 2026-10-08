@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import type { Screen } from '../types';
-import { mockPatients } from '../data/mockData';
 import { patientsApi, type ApiPatient, type ApiNursingNote } from '../services/api';
 
 interface Props {
@@ -24,11 +23,7 @@ export default function NursingNotes({ patientId, nurseName, onBack }: Props) {
         setPatient(res.data);
         setNotes(res.data.nursingNotes ?? []);
       })
-      .catch(() => {
-        const m = mockPatients.find(p => p.id === patientId) ?? mockPatients[0];
-        setPatient({ ...m, _id: m.id, ward: m.ward, vitals: [m.vitals as never], medications: m.medications as never, wardRounds: m.wardRounds as never, nursingNotes: m.nursingNotes as never, assignedDoctor: m.assignedDoctor, assignedNurse: m.assignedNurse } as unknown as ApiPatient);
-        setNotes(m.nursingNotes.map(n => ({ _id: n.id, date: n.date, nurse: n.nurse, note: n.note })) as unknown as ApiNursingNote[]);
-      });
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load patient'));
   }, [patientId]);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -38,15 +33,13 @@ export default function NursingNotes({ patientId, nurseName, onBack }: Props) {
     try {
       const res = await patientsApi.addNursingNote(patientId, { note: noteText });
       setNotes(prev => [res.data, ...prev]);
-    } catch {
-      // Offline fallback — add locally
-      const local: ApiNursingNote = { _id: `local-${Date.now()}`, date: new Date().toISOString(), nurse: nurseName, note: noteText };
-      setNotes(prev => [local, ...prev]);
-    } finally {
-      setNoteText('');
-      setSaving(false);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+      setNoteText('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save note');
+    } finally {
+      setSaving(false);
     }
   };
 

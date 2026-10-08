@@ -1,5 +1,7 @@
 import type { Screen } from '../types';
-import { mockPatients } from '../data/mockData';
+import { usePatient } from '../hooks/usePatient';
+import { buildHistory, fmtDate, fmtTime, shortId, wardNameOf } from '../utils/patient';
+import { Spinner, ErrorState } from '../components/LoadingState';
 
 interface Props {
   patientId: string;
@@ -16,31 +18,13 @@ const typeConfig = {
 };
 
 export default function PatientHistory({ patientId, onBack }: Props) {
-  const p = mockPatients.find(pt => pt.id === patientId) ?? mockPatients[0];
+  const { patient: p, loading, error } = usePatient(patientId);
 
-  const allHistory = [
-    ...p.history,
-    ...p.wardRounds.map(wr => ({
-      id: wr.id + '-detail',
-      type: 'ward-round' as const,
-      date: wr.date,
-      title: 'Ward Round Notes',
-      summary: `Assessment: ${wr.assessment} | Plan: ${wr.treatmentPlan}`,
-      staff: wr.doctor,
-    })),
-    ...p.nursingNotes.map(nn => ({
-      id: nn.id + '-detail',
-      type: 'nursing-note' as const,
-      date: nn.date,
-      title: 'Nursing Note',
-      summary: nn.note,
-      staff: nn.nurse,
-    })),
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  if (loading) return <Spinner label="Loading history..." />;
+  if (error || !p) return <ErrorState message={error || 'Patient not found'} onBack={onBack} />;
 
-  const unique = allHistory.filter((entry, idx, arr) =>
-    arr.findIndex(e => e.id === entry.id) === idx
-  );
+  // Admission, ward rounds, vitals, administered doses and nursing notes — newest first.
+  const unique = buildHistory(p);
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 p-6 space-y-5">
@@ -57,9 +41,9 @@ export default function PatientHistory({ patientId, onBack }: Props) {
           <div>
             <h1 className="text-lg font-bold text-slate-900">{p.name}</h1>
             <div className="flex items-center gap-3 mt-0.5 text-xs text-slate-500">
-              <span className="font-mono bg-slate-100 px-2 py-0.5 rounded">{p.id}</span>
+              <span className="font-mono bg-slate-100 px-2 py-0.5 rounded">{shortId(p._id)}</span>
               <span>{p.age}y · {p.gender}</span>
-              <span>Bed {p.bed} · {p.ward}</span>
+              <span>Bed {p.bed} · {wardNameOf(p)}</span>
             </div>
           </div>
         </div>
@@ -100,8 +84,8 @@ export default function PatientHistory({ patientId, onBack }: Props) {
                         <h3 className="text-sm font-bold text-slate-900 mt-0.5">{entry.title}</h3>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-xs text-slate-500">{entry.date.split(' ')[0]}</p>
-                        <p className="text-[11px] text-slate-400">{entry.date.split(' ')[1] ?? ''}</p>
+                        <p className="text-xs text-slate-500">{fmtDate(entry.date)}</p>
+                        <p className="text-[11px] text-slate-400">{fmtTime(entry.date)}</p>
                       </div>
                     </div>
                     <p className="text-sm text-slate-700 mt-2 leading-relaxed">{entry.summary}</p>

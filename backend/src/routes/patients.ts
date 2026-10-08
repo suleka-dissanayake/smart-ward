@@ -185,18 +185,29 @@ router.patch(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const { id, medId, doseIdx } = req.params;
-      const patient = await Patient.findOneAndUpdate(
-        { _id: id, "medications._id": medId },
-        {
-          $set: {
-            [`medications.$.scheduledTimes.${doseIdx}.status`]: "Administered",
-            [`medications.$.scheduledTimes.${doseIdx}.administeredAt`]: new Date(),
-            [`medications.$.scheduledTimes.${doseIdx}.administeredBy`]: req.user!._id,
-          },
-        },
-        { new: true }
-      );
-      if (!patient) return next(createError("Patient or medication not found", 404));
+      const idx = Number(doseIdx);
+
+      const patient = await Patient.findById(id);
+      if (!patient) return next(createError("Patient not found", 404));
+
+      const med = patient.medications.find((m) => String(m._id) === medId);
+      if (!med) return next(createError("Medication not found", 404));
+
+      // Validate the index so a bad URL can never create empty array slots.
+      if (!Number.isInteger(idx) || idx < 0 || idx >= med.scheduledTimes.length) {
+        return next(createError("Dose not found", 404));
+      }
+
+      const dose = med.scheduledTimes[idx];
+      if (dose.status === "Administered") {
+        return next(createError("Dose has already been administered", 409));
+      }
+
+      dose.status = "Administered";
+      dose.administeredAt = new Date();
+      dose.administeredBy = req.user!._id as typeof dose.administeredBy;
+      await patient.save();
+
       res.json({ success: true, message: "Dose administered" });
     } catch (err) {
       next(err);

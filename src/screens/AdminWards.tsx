@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { mockWards, getBedLayout } from '../data/mockData';
 import type { Screen } from '../types';
-import { wardsApi, type ApiWard } from '../services/api';
+import { wardsApi, patientsApi, type ApiWard, type ApiPatient } from '../services/api';
+import { shortId } from '../utils/patient';
 import StatusBadge from '../components/StatusBadge';
 
 interface Props {
@@ -18,25 +18,19 @@ export default function AdminWards({ onNavigate }: Props) {
   const [form, setForm]         = useState({ ...EMPTY_FORM });
   const [saving, setSaving]     = useState(false);
   const [toast, setToast]       = useState('');
-  const [usingMock, setUsingMock] = useState(false);
+  const [patients, setPatients] = useState<ApiPatient[]>([]);
+  const [loadError, setLoadError] = useState('');
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 4000); };
 
   useEffect(() => {
-    wardsApi.list()
-      .then(res => {
-        setWards(res.data);
-        if (res.data.length > 0) setSelectedId(res.data[0]._id);
+    Promise.all([wardsApi.list(), patientsApi.list()])
+      .then(([w, p]) => {
+        setWards(w.data);
+        setPatients(p.data);
+        if (w.data.length > 0) setSelectedId(w.data[0]._id);
       })
-      .catch(() => {
-        setUsingMock(true);
-        const fallback: ApiWard[] = mockWards.map(w => ({
-          _id: w.id, id: w.id, name: w.name, totalBeds: w.totalBeds,
-          occupiedBeds: w.occupiedBeds, beds: [],
-        }));
-        setWards(fallback);
-        if (fallback.length > 0) setSelectedId(fallback[0]._id);
-      })
+      .catch(err => setLoadError(err instanceof Error ? err.message : 'Failed to load wards'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -76,28 +70,13 @@ export default function AdminWards({ onNavigate }: Props) {
 
   const selected = wards.find(w => w._id === selectedId);
 
-  // Bed rows: use real beds from API if available, else fall back to mock layout
-  const bedRows = (() => {
-    if (!selected) return [];
-    if (selected.beds && selected.beds.length > 0) {
-      return selected.beds.map(b => ({
-        bedNumber: b.bedNumber,
-        isOccupied: b.isOccupied,
-        patientId: b.patientId,
-      }));
-    }
-    // Offline fallback: use mock getBedLayout
-    const prefix = selected.name.split(' ')[0];
-    return getBedLayout(selected.name)
-      .filter(b => b.bed.startsWith(prefix))
-      .map(b => ({
-        bedNumber: b.bed,
-        isOccupied: !!b.patient,
-        patientId: b.patient?.id,
-        patientData: b.patient,
-        status: b.status,
-      }));
-  })();
+  const patientById = new Map(patients.map(p => [p._id, p]));
+
+  const bedRows = (selected?.beds ?? []).map(b => ({
+    bedNumber: b.bedNumber,
+    isOccupied: b.isOccupied,
+    patientId: b.patientId,
+  }));
 
   if (loading) {
     return (
@@ -130,9 +109,9 @@ export default function AdminWards({ onNavigate }: Props) {
         </div>
       )}
 
-      {usingMock && (
-        <div className="flex items-center gap-2 bg-amber-50 text-amber-700 text-xs px-4 py-2.5 rounded-lg border border-amber-200">
-          <span>⚠</span> Backend offline — showing demo data. Add Ward will not persist until the server is running.
+      {loadError && (
+        <div className="flex items-center gap-2 bg-red-50 text-red-700 text-xs px-4 py-2.5 rounded-lg border border-red-200">
+          <span>⚠</span> {loadError}. Make sure the backend is running and the database is seeded.
         </div>
       )}
 
@@ -196,18 +175,18 @@ export default function AdminWards({ onNavigate }: Props) {
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {bedRows.map((b) => {
-                    const pd = (b as { patientData?: { name: string; id: string; age: number; gender: string; admissionDate: string; diagnosis: string } }).patientData;
+                    const pd = b.patientId ? patientById.get(String(b.patientId)) : undefined;
                     return (
                       <tr key={b.bedNumber} className="hover:bg-slate-50">
                         <td className="py-3 pr-4 font-mono text-sm font-bold text-slate-700">{b.bedNumber}</td>
                         <td className="py-3 pr-4">
-                          <StatusBadge status={b.isOccupied ? 'Attention' : 'Available'} />
+                          <StatusBadge status={pd ? pd.status : b.isOccupied ? 'Attention' : 'Available'} />
                         </td>
                         <td className="py-3 pr-4">
                           {pd ? (
                             <div>
                               <div className="text-sm font-semibold text-slate-900">{pd.name}</div>
-                              <div className="text-xs text-slate-400">{pd.id} · {pd.age}y {pd.gender}</div>
+                              <div className="text-xs text-slate-400">{shortId(pd._id)} · {pd.age}y {pd.gender}</div>
                             </div>
                           ) : b.isOccupied ? (
                             <span className="text-xs text-slate-500">Patient assigned</span>

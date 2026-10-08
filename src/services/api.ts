@@ -212,6 +212,8 @@ export interface DashboardStats {
   attentionPatients: number;
   totalWards: number;
   totalUsers: number;
+  totalDoctors: number;
+  totalNurses: number;
   unreadNotifications: number;
   wardSummary: { id: string; name: string; totalBeds: number; occupiedBeds: number }[];
 }

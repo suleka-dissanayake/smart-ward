@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { mockUsers } from '../data/mockData';
 import { usersApi, type ApiUser } from '../services/api';
 import StatusBadge from '../components/StatusBadge';
 
@@ -14,6 +13,7 @@ const EMPTY_FORM = { name: '', email: '', password: '', role: 'doctor', departme
 export default function AdminUsers() {
   const [users, setUsers]         = useState<ApiUser[]>([]);
   const [loading, setLoading]     = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [search, setSearch]       = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [showAdd, setShowAdd]     = useState(false);
@@ -26,7 +26,7 @@ export default function AdminUsers() {
   useEffect(() => {
     usersApi.list()
       .then(res => setUsers(res.data))
-      .catch(() => setUsers(mockUsers.map(u => ({ _id: u.id, id: u.id, name: u.name, email: u.email, role: u.role, department: u.department, status: u.status }))))
+      .catch(err => setLoadError(err instanceof Error ? err.message : 'Failed to load users'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -87,6 +87,12 @@ export default function AdminUsers() {
         </div>
         <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700">+ Add User</button>
       </div>
+
+      {loadError && (
+        <div className="flex items-center gap-2 bg-red-50 text-red-700 text-xs px-4 py-2.5 rounded-lg border border-red-200">
+          <span>⚠</span> {loadError}. Make sure the backend is running and the database is seeded.
+        </div>
+      )}
 
       {toast && (
         <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm ${toast.includes('Failed') ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'}`}>

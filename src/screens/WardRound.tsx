@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import type { Screen } from '../types';
-import { mockPatients } from '../data/mockData';
 import { patientsApi, type ApiPatient } from '../services/api';
 import StatusBadge from '../components/StatusBadge';
 
@@ -21,10 +20,7 @@ export default function WardRound({ patientId, doctorName, onBack, onNavigate }:
   useEffect(() => {
     patientsApi.get(patientId)
       .then(res => setPatient(res.data))
-      .catch(() => {
-        const m = mockPatients.find(p => p.id === patientId) ?? mockPatients[0];
-        setPatient({ ...m, _id: m.id, ward: m.ward, vitals: [m.vitals as never], medications: m.medications as never, wardRounds: m.wardRounds as never, nursingNotes: m.nursingNotes as never, assignedDoctor: m.assignedDoctor, assignedNurse: m.assignedNurse } as unknown as ApiPatient);
-      });
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load patient'));
   }, [patientId]);
 
   const set = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }));

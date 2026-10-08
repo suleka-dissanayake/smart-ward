@@ -1,24 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Screen } from '../types';
-import { mockWards, getBedLayout } from '../data/mockData';
-import StatusBadge from '../components/StatusBadge';
+import { wardsApi, patientsApi, type ApiWard, type ApiPatient } from '../services/api';
+import { Spinner, ErrorState } from '../components/LoadingState';
 
 interface Props {
   onNavigate: (screen: Screen, patientId?: string) => void;
 }
 
+const wardIdOf = (p: ApiPatient): string =>
+  typeof p.ward === 'object' && p.ward !== null ? p.ward._id : String(p.ward);
+
 export default function WardBedView({ onNavigate }: Props) {
+  const [wards, setWards]       = useState<ApiWard[]>([]);
+  const [patients, setPatients] = useState<ApiPatient[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState('');
   const [selectedWard, setSelectedWard] = useState('All Wards');
 
-  const wardOptions = ['All Wards', ...mockWards.map(w => w.name)];
-  const beds = getBedLayout(selectedWard);
+  useEffect(() => {
+    Promise.all([wardsApi.list(), patientsApi.list()])
+      .then(([w, p]) => { setWards(w.data); setPatients(p.data); })
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load wards'))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const prefix = selectedWard === 'All Wards' ? '' : selectedWard.split(' ')[0];
-  const filtered = selectedWard === 'All Wards' ? beds : beds.filter(b => b.bed.startsWith(prefix));
+  if (loading) return <Spinner label="Loading wards..." />;
+  if (error) return <ErrorState message={error} />;
 
-  const ward = mockWards.find(w => w.name === selectedWard);
-  const occupied = filtered.filter(b => b.patient).length;
-  const available = filtered.filter(b => !b.patient).length;
+  const wardOptions = ['All Wards', ...wards.map(w => w.name)];
+
+  // Look up the patient lying in each bed: (ward id + bed number) -> patient
+  const patientAt = new Map(patients.map(p => [`${wardIdOf(p)}|${p.bed}`, p]));
+
+  const filtered = wards
+    .filter(w => selectedWard === 'All Wards' || w.name === selectedWard)
+    .flatMap(w => w.beds.map(b => ({
+      key: `${w._id}-${b.bedNumber}`,
+      bed: b.bedNumber,
+      patient: patientAt.get(`${w._id}|${b.bedNumber}`),
+    })));
+
+  const occupied  = filtered.filter(b => b.patient).length;
+  const available = filtered.length - occupied;
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 p-6 space-y-6">
@@ -81,16 +104,17 @@ export default function WardBedView({ onNavigate }: Props) {
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
         <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
           {filtered.map(b => {
+            const status = b.patient?.status;
             const statusColor = b.patient
-              ? b.status === 'Stable' ? 'bg-green-50 border-green-200 hover:border-green-400'
-              : b.status === 'Attention' ? 'bg-amber-50 border-amber-200 hover:border-amber-400'
+              ? status === 'Stable' ? 'bg-green-50 border-green-200 hover:border-green-400'
+              : status === 'Attention' ? 'bg-amber-50 border-amber-200 hover:border-amber-400'
               : 'bg-red-50 border-red-200 hover:border-red-400'
               : 'bg-slate-50 border-slate-200 hover:border-slate-300';
 
             return (
               <button
-                key={b.bed}
-                onClick={() => b.patient && onNavigate('patient-profile', b.patient.id)}
+                key={b.key}
+                onClick={() => b.patient && onNavigate('patient-profile', b.patient._id)}
                 disabled={!b.patient}
                 className={`rounded-xl border-2 p-3 text-left transition-all ${statusColor} ${b.patient ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
               >
@@ -104,11 +128,11 @@ export default function WardBedView({ onNavigate }: Props) {
                       {b.patient.name.split(' ').slice(1).join(' ')}
                     </div>
                     <div className={`mt-2 text-[9px] font-bold uppercase tracking-wide ${
-                      b.status === 'Stable' ? 'text-green-700'
-                      : b.status === 'Attention' ? 'text-amber-700'
+                      status === 'Stable' ? 'text-green-700'
+                      : status === 'Attention' ? 'text-amber-700'
                       : 'text-red-700'
                     }`}>
-                      {b.status}
+                      {status}
                     </div>
                   </>
                 ) : (

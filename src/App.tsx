@@ -75,9 +75,13 @@ function AppShell() {
     return <Login />;
   }
 
-  const pid = selectedPatientId ?? 'P-10042';
+  const pid = selectedPatientId ?? '';
+  const needsPatient: Screen[] = ['patient-profile','patient-history','record-vitals','medications','ward-round','nursing-notes'];
 
   const renderScreen = () => {
+    if (needsPatient.includes(screen) && !pid) {
+      return <PatientList onNavigate={navigate} />;
+    }
     switch (screen) {
       case 'doctor-dashboard':
         return <DoctorDashboard user={user} onNavigate={navigate} />;

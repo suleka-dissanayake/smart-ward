@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import type { Screen } from '../types';
-import { mockPatients, mockUsers, mockWards } from '../data/mockData';
 import { dashboardApi, type DashboardStats } from '../services/api';
 
 interface Props {
@@ -9,28 +8,14 @@ interface Props {
 
 export default function AdminDashboard({ onNavigate }: Props) {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     dashboardApi.stats()
       .then(res => setStats(res.data))
-      .catch(() => {
-        const totalBeds = mockWards.reduce((a, w) => a + w.totalBeds, 0);
-        const occupiedBeds = mockWards.reduce((a, w) => a + w.occupiedBeds, 0);
-        setStats({
-          totalPatients: mockPatients.length,
-          criticalPatients: mockPatients.filter(p => p.status === 'Critical').length,
-          stablePatients: mockPatients.filter(p => p.status === 'Stable').length,
-          attentionPatients: mockPatients.filter(p => p.status === 'Attention').length,
-          totalWards: mockWards.length,
-          totalUsers: mockUsers.length,
-          unreadNotifications: 4,
-          wardSummary: mockWards.map(w => ({ id: w.id, name: w.name, totalBeds: w.totalBeds, occupiedBeds: w.occupiedBeds })),
-        });
-      });
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load dashboard'));
   }, []);
 
-  const doctors = stats ? 0 : mockUsers.filter(u => u.role === 'doctor').length;
-  const nurses  = stats ? 0 : mockUsers.filter(u => u.role === 'nurse').length;
   const totalBeds    = stats?.wardSummary.reduce((a, w) => a + w.totalBeds, 0) ?? 0;
   const occupiedBeds = stats?.wardSummary.reduce((a, w) => a + w.occupiedBeds, 0) ?? 0;
 
@@ -38,8 +23,8 @@ export default function AdminDashboard({ onNavigate }: Props) {
     { label: 'Total Patients',  value: stats?.totalPatients ?? '-',          color: 'bg-blue-600',  icon: '♥' },
     { label: 'Occupied Beds',   value: occupiedBeds,                          color: 'bg-amber-500', icon: '🛏' },
     { label: 'Available Beds',  value: totalBeds - occupiedBeds,              color: 'bg-green-600', icon: '✓' },
-    { label: 'Doctors',         value: stats?.totalUsers ? doctors : doctors, color: 'bg-indigo-50', icon: 'stethoscope' },
-    { label: 'Nurses',          value: stats?.totalUsers ? nurses  : nurses,  color: 'bg-teal-600',  icon: '♥' },
+    { label: 'Doctors',         value: stats?.totalDoctors ?? '-',            color: 'bg-indigo-50', icon: 'stethoscope' },
+    { label: 'Nurses',          value: stats?.totalNurses ?? '-',             color: 'bg-teal-600',  icon: '♥' },
   ];
 
   return (
@@ -48,6 +33,12 @@ export default function AdminDashboard({ onNavigate }: Props) {
         <h1 className="text-xl font-bold text-slate-900">Admin Dashboard</h1>
         <p className="text-sm text-slate-500 mt-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
       </div>
+
+      {error && (
+        <div className="flex items-center gap-2 bg-red-50 text-red-700 text-xs px-4 py-2.5 rounded-lg border border-red-200">
+          <span>⚠</span> {error}. Make sure the backend is running and the database is seeded.
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {statCards.map(s => (
@@ -74,7 +65,7 @@ export default function AdminDashboard({ onNavigate }: Props) {
             <button onClick={() => onNavigate('admin-wards')} className="text-xs text-blue-600 font-medium hover:underline">Manage</button>
           </div>
           <div className="divide-y divide-slate-50">
-            {(stats?.wardSummary ?? mockWards.map(w => ({ id: w.id, name: w.name, totalBeds: w.totalBeds, occupiedBeds: w.occupiedBeds }))).map(ward => {
+            {(stats?.wardSummary ?? []).map(ward => {
               const pct = Math.round((ward.occupiedBeds / ward.totalBeds) * 100);
               return (
                 <div key={ward.id} className="px-5 py-4">
