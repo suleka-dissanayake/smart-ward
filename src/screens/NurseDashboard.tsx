@@ -22,7 +22,6 @@ export default function NurseDashboard({ user, onNavigate }: Props) {
       .finally(() => setLoading(false));
   }, [user.id]);
 
-  // Patients with pending medications today
   const pendingMedPatients = patients.filter(p =>
     p.medications.some(m => m.scheduledTimes.some(d => d.status === 'Pending'))
   );

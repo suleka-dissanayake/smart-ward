@@ -1,4 +1,4 @@
-# Running SmartWard
+# Running SmartWard Guide
 
 1. Start MongoDB (service, `docker run -d --name smartward-mongo -p 27017:27017 mongo:7`, or Atlas URI in backend/.env).
 2. Backend (terminal 1):  cd backend && npm install && npm run seed && npm run dev   -> http://localhost:5000/health
