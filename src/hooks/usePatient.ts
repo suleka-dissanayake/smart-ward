@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { patientsApi, type ApiPatient } from '../services/api';
 
-/** Loads one patient from the API. `reload()` refreshes silently (no spinner flash). */
 export function usePatient(patientId: string) {
   const [patient, setPatient] = useState<ApiPatient | null>(null);
   const [loading, setLoading] = useState(true);
