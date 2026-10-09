@@ -3,6 +3,8 @@ import type { Screen, UserRole } from '../types';
 import { usePatient } from '../hooks/usePatient';
 import { buildHistory, fmtDate, fmtDateTime, latestVitals, latestWardRound, nameOf, shortId, wardNameOf } from '../utils/patient';
 import StatusBadge from '../components/StatusBadge';
+import PatientFormModal from '../components/PatientFormModal';
+import { RemovePatientDialog, DischargeDialog } from '../components/PatientActions';
 import { Spinner, ErrorState } from '../components/LoadingState';
 
 interface Props {
@@ -16,7 +18,19 @@ type Tab = 'overview' | 'observations' | 'medications' | 'history';
 
 export default function PatientProfile({ patientId, role, onNavigate, onBack }: Props) {
   const [tab, setTab] = useState<Tab>('overview');
-  const { patient: p, loading, error } = usePatient(patientId);
+  const { patient: p, loading, error, reload } = usePatient(patientId);
+  const [showEdit, setShowEdit]           = useState(false);
+  const [showDischarge, setShowDischarge] = useState(false);
+  const [showRemove, setShowRemove]       = useState(false);
+  const [notice, setNotice]               = useState('');
+  const canManage = role === 'admin' || role === 'doctor'; // edit + discharge; everyone may remove
+
+  const done = (message: string) => {
+    setShowEdit(false); setShowDischarge(false);
+    setNotice(message);
+    setTimeout(() => setNotice(''), 5000);
+    void reload();
+  };
 
   if (loading) return <Spinner label="Loading patient..." />;
   if (error || !p) return <ErrorState message={error || 'Patient not found'} onBack={onBack} />;
@@ -46,6 +60,8 @@ export default function PatientProfile({ patientId, role, onNavigate, onBack }: 
       <button onClick={onBack} className="flex items-center gap-2 text-sm text-slate-500 hover:text-blue-600 transition-colors font-medium">
         ← Back to list
       </button>
+
+      {notice && <div className="flex items-center gap-2 px-4 py-3 rounded-xl border text-sm bg-green-50 text-green-700 border-green-200">✓ {notice}</div>}
 
       {/* Header card */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
@@ -87,7 +103,7 @@ export default function PatientProfile({ patientId, role, onNavigate, onBack }: 
                   Ward Round
                 </button>
               )}
-              {role === 'nurse' && (
+              {(role === 'nurse' || role === 'doctor') && (
                 <button
                   onClick={() => onNavigate('medications', p._id)}
                   className="px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -95,6 +111,15 @@ export default function PatientProfile({ patientId, role, onNavigate, onBack }: 
                   Medications
                 </button>
               )}
+            </div>
+            <div className="flex gap-2">
+              {canManage && (
+                <button onClick={() => setShowEdit(true)} className="px-3 py-1.5 text-xs font-semibold border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">Edit</button>
+              )}
+              {canManage && p.status !== 'Discharged' && (
+                <button onClick={() => setShowDischarge(true)} className="px-3 py-1.5 text-xs font-semibold border border-amber-200 text-amber-700 rounded-lg hover:bg-amber-50 transition-colors">Discharge</button>
+              )}
+              <button onClick={() => setShowRemove(true)} className="px-3 py-1.5 text-xs font-semibold border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors">Remove</button>
             </div>
           </div>
         </div>
@@ -264,6 +289,10 @@ export default function PatientProfile({ patientId, role, onNavigate, onBack }: 
           </div>
         </div>
       )}
+
+      {showEdit && <PatientFormModal patient={p} onSaved={done} onClose={() => setShowEdit(false)} />}
+      {showDischarge && <DischargeDialog patient={p} onDone={done} onClose={() => setShowDischarge(false)} />}
+      {showRemove && <RemovePatientDialog patient={p} onDone={() => onNavigate('patient-list')} onClose={() => setShowRemove(false)} />}
     </div>
   );
 }

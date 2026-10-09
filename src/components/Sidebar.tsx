@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { Screen, UserRole } from '../types';
+import ChangePasswordModal from './ChangePasswordModal';
 
 interface NavItem {
   id: Screen;
@@ -8,6 +10,7 @@ interface NavItem {
 
 const doctorNav: NavItem[] = [
   { id: 'doctor-dashboard', label: 'Dashboard', icon: '⊞' },
+  { id: 'ward-round-session', label: 'Ward Round', icon: '🩺' },
   { id: 'patient-list', label: 'Patients', icon: '♥' },
   { id: 'ward-bed', label: 'Ward View', icon: '⊟' },
   { id: 'notifications', label: 'Notifications', icon: '🔔' },
@@ -25,6 +28,7 @@ const adminNav: NavItem[] = [
   { id: 'admin-patients', label: 'Patients', icon: '♥' },
   { id: 'admin-wards', label: 'Wards & Beds', icon: '⊟' },
   { id: 'admin-users', label: 'Users', icon: '👤' },
+  { id: 'admin-reports', label: 'Reports', icon: '📊' },
 ];
 
 interface Props {
@@ -37,6 +41,7 @@ interface Props {
 }
 
 export default function Sidebar({ role, currentScreen, userName, onNavigate, onLogout, notifCount = 3 }: Props) {
+  const [showPassword, setShowPassword] = useState(false);
   const nav = role === 'doctor' ? doctorNav : role === 'nurse' ? nurseNav : adminNav;
   const initials = userName.split(' ').filter(w => w[0] === w[0]?.toUpperCase() && w !== 'Dr.' && w !== 'Nurse').slice(0, 2).map(w => w[0]).join('');
 
@@ -62,7 +67,7 @@ export default function Sidebar({ role, currentScreen, userName, onNavigate, onL
 
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {nav.map(item => {
-          const active = currentScreen === item.id;
+          const active = currentScreen === item.id || (item.id === 'ward-round-session' && currentScreen === 'ward-round');
           return (
             <button
               key={item.id}
@@ -96,12 +101,19 @@ export default function Sidebar({ role, currentScreen, userName, onNavigate, onL
           </div>
         </div>
         <button
+          onClick={() => setShowPassword(true)}
+          className="w-full text-xs text-slate-500 hover:text-blue-600 text-left py-1 transition-colors"
+        >
+          Change password
+        </button>
+        <button
           onClick={onLogout}
           className="w-full text-xs text-slate-500 hover:text-red-600 text-left py-1 transition-colors"
         >
           Sign out →
         </button>
       </div>
+      {showPassword && <ChangePasswordModal onClose={() => setShowPassword(false)} />}
     </aside>
   );
 }

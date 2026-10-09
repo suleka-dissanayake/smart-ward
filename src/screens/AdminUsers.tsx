@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { usersApi, type ApiUser } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import StatusBadge from '../components/StatusBadge';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { Spinner } from '../components/LoadingState';
 
 const roleColors: Record<string, string> = {
   doctor: 'bg-indigo-50 text-indigo-700',
@@ -8,47 +11,76 @@ const roleColors: Record<string, string> = {
   admin:  'bg-purple-50 text-purple-700',
 };
 
-const EMPTY_FORM = { name: '', email: '', password: '', role: 'doctor', department: '', status: 'Active' as 'Active' | 'Inactive' };
+type Role = 'doctor' | 'nurse' | 'admin';
+type FormState = { name: string; email: string; password: string; role: Role; department: string; status: 'Active' | 'Inactive' };
+const EMPTY_FORM: FormState = { name: '', email: '', password: '', role: 'doctor', department: '', status: 'Active' };
+
+const inputCls = 'w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+const labelCls = 'block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide';
 
 export default function AdminUsers() {
+  const { user: me } = useAuth();
   const [users, setUsers]         = useState<ApiUser[]>([]);
   const [loading, setLoading]     = useState(true);
   const [loadError, setLoadError] = useState('');
   const [search, setSearch]       = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
-  const [showAdd, setShowAdd]     = useState(false);
-  const [toast, setToast]         = useState('');
-  const [form, setForm]           = useState({ ...EMPTY_FORM });
+  const [toast, setToast]         = useState<{ text: string; error?: boolean } | null>(null);
+
+  // `editing === null` + `showForm` => add; `editing` set => edit
+  const [showForm, setShowForm]   = useState(false);
+  const [editing, setEditing]     = useState<ApiUser | null>(null);
+  const [form, setForm]           = useState<FormState>({ ...EMPTY_FORM });
   const [saving, setSaving]       = useState(false);
+  const [formError, setFormError] = useState('');
 
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 4000); };
+  const [deleting, setDeleting]   = useState<ApiUser | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
-  useEffect(() => {
+  const showToast = (text: string, error = false) => { setToast({ text, error }); setTimeout(() => setToast(null), 5000); };
+
+  const load = () =>
     usersApi.list()
-      .then(res => setUsers(res.data))
+      .then(res => { setUsers(res.data); setLoadError(''); })
       .catch(err => setLoadError(err instanceof Error ? err.message : 'Failed to load users'))
       .finally(() => setLoading(false));
-  }, []);
+
+  useEffect(() => { void load(); }, []);
 
   const filtered = users.filter(u => {
     const q = search.toLowerCase();
-    return (!q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
+    return (!q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.department.toLowerCase().includes(q))
       && (roleFilter === 'All' || u.role === roleFilter.toLowerCase());
   });
 
-  const handleAdd = async (e: React.FormEvent) => {
+  const openAdd = () => { setEditing(null); setForm({ ...EMPTY_FORM }); setFormError(''); setShowForm(true); };
+  const openEdit = (u: ApiUser) => {
+    setEditing(u);
+    setForm({ name: u.name, email: u.email, password: '', role: u.role, department: u.department, status: u.status });
+    setFormError('');
+    setShowForm(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setFormError('');
     try {
-      const res = await usersApi.create(form as Parameters<typeof usersApi.create>[0]);
-      setUsers(prev => [res.data, ...prev]);
-      showToast(`User "${res.data.name}" added successfully.`);
+      if (editing) {
+        const { name, email, role, department, status } = form;
+        await usersApi.update(editing._id, { name, email, role, department, status });
+        showToast(`${name} updated.`);
+      } else {
+        await usersApi.create(form);
+        showToast(`${form.name} added as ${form.role}.`);
+      }
+      setShowForm(false);
+      void load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to add user');
+      setFormError(err instanceof Error ? err.message : 'Failed to save user'); // keep the form open so nothing is lost
     } finally {
       setSaving(false);
-      setShowAdd(false);
-      setForm({ ...EMPTY_FORM });
     }
   };
 
@@ -58,34 +90,42 @@ export default function AdminUsers() {
       await usersApi.update(u._id, { status: newStatus });
       setUsers(prev => prev.map(x => x._id === u._id ? { ...x, status: newStatus } : x));
       showToast(`${u.name} marked as ${newStatus}.`);
-    } catch {
-      showToast('Failed to update user status.');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to update user status.', true);
     }
   };
 
-  const handleDelete = async (u: ApiUser) => {
-    if (!confirm(`Delete ${u.name}? This cannot be undone.`)) return;
+  const handleDelete = async () => {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    setDeleteError('');
     try {
-      await usersApi.remove(u._id);
-      setUsers(prev => prev.filter(x => x._id !== u._id));
-      showToast(`${u.name} deleted.`);
-    } catch {
-      showToast('Failed to delete user.');
+      await usersApi.remove(deleting._id);
+      showToast(`${deleting.name} was removed.`);
+      setDeleting(null);
+      void load();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete user');
+    } finally {
+      setDeleteBusy(false);
     }
   };
 
-  if (loading) {
-    return <div className="flex-1 flex items-center justify-center bg-slate-50"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
-  }
+  if (loading) return <Spinner label="Loading users..." />;
+
+  const count = (r: Role) => users.filter(u => u.role === r).length;
+  const isMe = (u: ApiUser) => u._id === me?.id;
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900">User Management</h1>
-          <p className="text-sm text-slate-500 mt-0.5">{users.length} registered users</p>
+          <p className="text-sm text-slate-500 mt-0.5">
+            {users.length} users · {count('doctor')} doctors · {count('nurse')} nurses · {count('admin')} admins
+          </p>
         </div>
-        <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700">+ Add User</button>
+        <button onClick={openAdd} className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700">+ Add User</button>
       </div>
 
       {loadError && (
@@ -93,10 +133,9 @@ export default function AdminUsers() {
           <span>⚠</span> {loadError}. Make sure the backend is running and the database is seeded.
         </div>
       )}
-
       {toast && (
-        <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm ${toast.includes('Failed') ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
-          {toast.includes('Failed') ? '✗' : '✓'} {toast}
+        <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm ${toast.error ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
+          {toast.error ? '✗' : '✓'} {toast.text}
         </div>
       )}
 
@@ -108,91 +147,113 @@ export default function AdminUsers() {
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users..."
             className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
         </div>
-        <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
-          className="px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-white">
+        <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-white">
           {['All', 'Doctor', 'Nurse', 'Admin'].map(r => <option key={r}>{r}</option>)}
         </select>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="grid grid-cols-[1fr_1fr_100px_100px_80px_80px] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        <div className="grid grid-cols-[1fr_1fr_90px_130px_80px_230px] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide">
           <span>Name</span><span>Email</span><span>Role</span><span>Department</span><span>Status</span><span></span>
         </div>
+        {filtered.length === 0 && <div className="px-5 py-12 text-center text-sm text-slate-400">No users found</div>}
         <div className="divide-y divide-slate-50">
           {filtered.map(u => (
-            <div key={u._id} className="grid grid-cols-[1fr_1fr_100px_100px_80px_80px] gap-4 px-5 py-4 items-center hover:bg-slate-50">
-              <div className="text-sm font-semibold text-slate-900">{u.name}</div>
+            <div key={u._id} className="grid grid-cols-[1fr_1fr_90px_130px_80px_230px] gap-4 px-5 py-4 items-center hover:bg-slate-50">
+              <div className="text-sm font-semibold text-slate-900">
+                {u.name}{isMe(u) && <span className="ml-2 text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">You</span>}
+              </div>
               <div className="text-sm text-slate-500 truncate">{u.email}</div>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold w-fit ${roleColors[u.role]}`}>
                 {u.role.charAt(0).toUpperCase() + u.role.slice(1)}
               </span>
-              <div className="text-xs text-slate-500">{u.department}</div>
+              <div className="text-xs text-slate-500 truncate">{u.department}</div>
               <StatusBadge status={u.status} />
-              <div className="flex gap-1">
-                <button onClick={() => handleToggleStatus(u)}
-                  className="text-xs px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100">
-                  {u.status === 'Active' ? 'Deactivate' : 'Activate'}
-                </button>
-                <button onClick={() => handleDelete(u)}
-                  className="text-xs px-2 py-1 rounded-lg border border-red-100 text-red-600 hover:bg-red-50">
-                  ✕
-                </button>
+              <div className="flex gap-1.5 justify-end">
+                <button onClick={() => openEdit(u)} className="text-xs px-2.5 py-1 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100">Edit</button>
+                {!isMe(u) && (
+                  <>
+                    <button onClick={() => handleToggleStatus(u)} className="text-xs px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100">
+                      {u.status === 'Active' ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button onClick={() => { setDeleteError(''); setDeleting(u); }} className="text-xs px-2.5 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50">Remove</button>
+                  </>
+                )}
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {showAdd && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+      {showForm && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={saving ? undefined : () => setShowForm(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-slate-900">Add New User</h2>
-              <button onClick={() => setShowAdd(false)} className="text-slate-400 hover:text-slate-600 text-xl">×</button>
+              <h2 className="text-lg font-bold text-slate-900">{editing ? `Edit ${editing.name}` : 'Add New User'}</h2>
+              <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
             </div>
-            <form onSubmit={handleAdd} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {formError && <div className="bg-red-50 text-red-700 text-xs px-3 py-2.5 rounded-lg border border-red-200">✗ {formError}</div>}
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">Full Name</label>
-                <input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label className={labelCls}>Full Name</label>
+                <input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className={inputCls} placeholder="e.g. Dr. Sarah Mitchell" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">Email</label>
-                <input required type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label className={labelCls}>Email</label>
+                <input required type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className={inputCls} />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">Password</label>
-                <input required type="password" minLength={6} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
+              {!editing && (
+                <div>
+                  <label className={labelCls}>Initial Password</label>
+                  <input required type="password" minLength={6} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className={inputCls} placeholder="At least 6 characters" />
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">Role</label>
-                  <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <label className={labelCls}>Role</label>
+                  <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value as Role }))} disabled={!!editing && isMe(editing)} className={inputCls}>
                     <option value="doctor">Doctor</option>
                     <option value="nurse">Nurse</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">Department</label>
-                  <input required value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <label className={labelCls}>Department</label>
+                  <input required value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))} className={inputCls} placeholder="e.g. Medical Ward A" />
                 </div>
               </div>
+              {editing && !isMe(editing) && (
+                <div>
+                  <label className={labelCls}>Status</label>
+                  <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as 'Active' | 'Inactive' }))} className={inputCls}>
+                    <option>Active</option><option>Inactive</option>
+                  </select>
+                </div>
+              )}
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowAdd(false)}
-                  className="flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-50">Cancel</button>
-                <button type="submit" disabled={saving}
-                  className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60">
-                  {saving ? 'Saving...' : 'Add User'}
+                <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-50">Cancel</button>
+                <button type="submit" disabled={saving} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60">
+                  {saving ? 'Saving...' : editing ? 'Save changes' : 'Add User'}
                 </button>
               </div>
             </form>
           </div>
         </div>
+      )}
+
+      {deleting && (
+        <ConfirmDialog
+          danger
+          title={`Remove ${deleting.name}?`}
+          message={<>This deletes the {deleting.role}'s account and they will no longer be able to sign in.
+            {deleting.role !== 'admin' && <> A {deleting.role} who is still assigned to patients can't be removed until those patients are reassigned.</>}
+            {' '}To keep the account but block access, use <strong>Deactivate</strong> instead.</>}
+          confirmLabel="Remove user"
+          busy={deleteBusy}
+          error={deleteError}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleting(null)}
+        />
       )}
     </div>
   );

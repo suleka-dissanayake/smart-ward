@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import type { Screen } from '../types';
 import { patientsApi, type ApiPatient } from '../services/api';
+import { latestWardRound } from '../utils/patient';
 import StatusBadge from '../components/StatusBadge';
 
 interface Props {
   patientId: string;
   doctorName: string;
+  /** True when reached from a guided ward round — offers a "next patient" shortcut after saving. */
+  inSession?: boolean;
   onNavigate: (screen: Screen, patientId?: string) => void;
   onBack: () => void;
 }
 
-export default function WardRound({ patientId, doctorName, onBack, onNavigate }: Props) {
+export default function WardRound({ patientId, doctorName, inSession, onBack, onNavigate }: Props) {
   const [patient, setPatient] = useState<ApiPatient | null>(null);
   const [saved, setSaved]     = useState(false);
   const [saving, setSaving]   = useState(false);
@@ -53,6 +56,11 @@ export default function WardRound({ patientId, doctorName, onBack, onNavigate }:
           <p className="text-sm text-slate-500 mb-2">Ward round notes for <strong>{patient?.name}</strong> have been recorded.</p>
           <p className="text-xs text-slate-400 mb-6">Next review: {form.nextReview || 'Not specified'}</p>
           <div className="space-y-2">
+            {inSession && (
+              <button onClick={() => onNavigate('ward-round-session')} className="w-full py-2.5 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 transition-colors">
+                Continue ward round → next patient
+              </button>
+            )}
             <button onClick={() => onNavigate('patient-history', patient?._id ?? patientId)} className="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
               View Patient History
             </button>
@@ -66,7 +74,7 @@ export default function WardRound({ patientId, doctorName, onBack, onNavigate }:
   }
 
   const p = patient;
-  const last = p?.wardRounds?.[0] ?? null;
+  const last = p ? latestWardRound(p) ?? null : null;
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 p-6 space-y-5">

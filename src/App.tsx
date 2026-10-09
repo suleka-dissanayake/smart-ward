@@ -19,13 +19,25 @@ import AdminDashboard from './screens/AdminDashboard';
 import AdminPatients from './screens/AdminPatients';
 import AdminWards from './screens/AdminWards';
 import AdminUsers from './screens/AdminUsers';
+import Reports from './screens/Reports';
+import WardRoundSession from './screens/WardRoundSession';
+import { notificationsApi } from './services/api';
 
 function AppShell() {
   const { user, loading, logout } = useAuth();
   const [screen, setScreen] = useState<Screen>('login');
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [history, setHistory] = useState<{ screen: Screen; patientId: string | null }[]>([]);
-  const [notifCount, setNotifCount] = useState(3);
+  const [notifCount, setNotifCount] = useState(0);
+  const [inSession, setInSession] = useState(false); // true while the doctor is walking a guided ward round
+
+  // Real unread count for the sidebar badge (admins have no notifications screen).
+  useEffect(() => {
+    if (!user || user.role === 'admin') return;
+    notificationsApi.list()
+      .then(res => setNotifCount(res.data.filter(n => !n.isRead).length))
+      .catch(() => setNotifCount(0));
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -34,12 +46,15 @@ function AppShell() {
         user.role === 'nurse'  ? 'nurse-dashboard'  : 'admin-dashboard';
       setScreen(defaultScreen);
       setHistory([]);
+      setInSession(false);
     } else if (!loading) {
       setScreen('login');
     }
   }, [user, loading]);
 
   const navigate = (s: Screen, patientId?: string) => {
+    if (s === 'ward-round-session') setInSession(true);
+    else if (['doctor-dashboard', 'nurse-dashboard', 'patient-list', 'ward-bed', 'notifications'].includes(s)) setInSession(false);
     setHistory(prev => [...prev, { screen, patientId: selectedPatientId }]);
     setScreen(s);
     if (patientId !== undefined) setSelectedPatientId(patientId);
@@ -58,6 +73,7 @@ function AppShell() {
     logout();
     setSelectedPatientId(null);
     setHistory([]);
+    setInSession(false);
   };
 
   if (loading) {
@@ -100,7 +116,7 @@ function AppShell() {
       case 'medications':
         return <MedicationManagement patientId={pid} nurseName={user.name} onNavigate={navigate} onBack={goBack} />;
       case 'ward-round':
-        return <WardRound patientId={pid} doctorName={user.name} onNavigate={navigate} onBack={goBack} />;
+        return <WardRound patientId={pid} doctorName={user.name} inSession={inSession} onNavigate={navigate} onBack={goBack} />;
       case 'nursing-notes':
         return <NursingNotes patientId={pid} nurseName={user.name} onNavigate={navigate} onBack={goBack} />;
       case 'notifications':
@@ -113,6 +129,12 @@ function AppShell() {
         return <AdminWards onNavigate={navigate} />;
       case 'admin-users':
         return <AdminUsers />;
+      case 'admin-reports':
+        return <Reports />;
+      case 'ward-round-session':
+        return user.role === 'doctor'
+          ? <WardRoundSession user={user} onNavigate={navigate} />
+          : <DoctorDashboard user={user} onNavigate={navigate} />;
       default:
         return <DoctorDashboard user={user} onNavigate={navigate} />;
     }

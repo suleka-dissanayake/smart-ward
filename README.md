@@ -40,7 +40,6 @@ SmartWard focuses on digitising the **ward-round workflow**: vital signs, medica
 - Vital signs recording
 - Medication tracking
 - Nursing notes
-- Ticket Management
 - Patient history timeline
 - Ward & bed management
 
@@ -185,4 +184,4 @@ Miss. A. Ann Sinthusa — Faculty of Applied Science — University of Vavuniya
 
 ## License
 
-This project was developed for academic purposes as part of IT 3162 at University of Vavuniya. All rights reserved.
+This project was developed for academic purposes as part of IT 3162 at University of Vavuniya.

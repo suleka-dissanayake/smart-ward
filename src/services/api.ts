@@ -57,6 +57,8 @@ export const patientsApi = {
     post<{ success: boolean; data: ApiVitals }>(`/patients/${id}/vitals`, body),
   addMedication:  (id: string, body: MedPayload) =>
     post<{ success: boolean; data: ApiMedication }>(`/patients/${id}/medications`, body),
+  removeMedication: (id: string, medId: string) =>
+    del<{ success: boolean }>(`/patients/${id}/medications/${medId}`),
   administerDose: (id: string, medId: string, doseIdx: number) =>
     patch<{ success: boolean; message: string }>(`/patients/${id}/medications/${medId}/doses/${doseIdx}`, {}),
   addWardRound:   (id: string, body: WardRoundPayload) =>
@@ -73,6 +75,10 @@ export const wardsApi = {
   update: (id: string, body: Partial<ApiWard>) =>
     patch<{ success: boolean; data: ApiWard }>(`/wards/${id}`, body),
   remove: (id: string) => del<{ success: boolean }>(`/wards/${id}`),
+  addBeds: (id: string, body: { bedNumber?: string; count?: number }) =>
+    post<{ success: boolean; data: ApiWard }>(`/wards/${id}/beds`, body),
+  removeBed: (id: string, bedNumber: string) =>
+    del<{ success: boolean; data: ApiWard }>(`/wards/${id}/beds/${encodeURIComponent(bedNumber)}`),
 };
 
 export const usersApi = {
@@ -187,6 +193,7 @@ export interface ApiWard {
   _id: string;
   id: string;
   name: string;
+  description?: string;
   totalBeds: number;
   occupiedBeds: number;
   beds: { bedNumber: string; isOccupied: boolean; patientId?: string }[];
@@ -234,6 +241,7 @@ export interface MedPayload {
   frequency: string;
   startDate: string;
   endDate: string;
+  scheduledTimes?: string[]; // ["08:00", "20:00"]
 }
 
 export interface WardRoundPayload {

@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import type { Screen } from '../types';
 import { patientsApi, type ApiPatient } from '../services/api';
 import StatusBadge from '../components/StatusBadge';
+import PatientFormModal from '../components/PatientFormModal';
+import { RemovePatientDialog } from '../components/PatientActions';
+import { useAuth } from '../context/AuthContext';
 
 interface Props {
   onNavigate: (screen: Screen, patientId?: string) => void;
@@ -20,12 +23,28 @@ export default function PatientList({ onNavigate }: Props) {
   const [wardFilter, setWardFilter]     = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  useEffect(() => {
+  const { user } = useAuth();
+  const canEdit = user?.role === 'admin' || user?.role === 'doctor';
+  const [showAdd, setShowAdd]       = useState(false);
+  const [editPatient, setEditPatient] = useState<ApiPatient | null>(null);
+  const [removePatient, setRemovePatient] = useState<ApiPatient | null>(null);
+  const [toast, setToast]           = useState('');
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 5000); };
+
+  const load = () =>
     patientsApi.list()
-      .then(res => setPatients(res.data))
+      .then(res => { setPatients(res.data); setError(''); })
       .catch(() => setError('Failed to load patients. Make sure the backend is running.'))
       .finally(() => setLoading(false));
-  }, []);
+
+  useEffect(() => { void load(); }, []);
+
+  const handleChanged = (message: string) => {
+    setShowAdd(false); setEditPatient(null); setRemovePatient(null);
+    showToast(message);
+    void load();
+  };
 
   const wards    = ['All', ...Array.from(new Set(patients.map(p => wardName(p))))];
   const statuses = ['All', 'Stable', 'Attention', 'Critical'];
@@ -63,7 +82,14 @@ export default function PatientList({ onNavigate }: Props) {
           <h1 className="text-xl font-bold text-slate-900">Patient List</h1>
           <p className="text-sm text-slate-500 mt-0.5">{patients.length} total patients</p>
         </div>
+        <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
+          + Add Patient
+        </button>
       </div>
+
+      {toast && (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border text-sm bg-green-50 text-green-700 border-green-200">✓ {toast}</div>
+      )}
 
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
@@ -89,7 +115,7 @@ export default function PatientList({ onNavigate }: Props) {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="grid grid-cols-[1fr_1fr_120px_100px_120px_80px] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        <div className="grid grid-cols-[1fr_1fr_120px_100px_110px_190px] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide">
           <span>Patient</span><span>Diagnosis</span><span>Ward / Bed</span>
           <span>Status</span><span>Admitted</span><span></span>
         </div>
@@ -104,7 +130,7 @@ export default function PatientList({ onNavigate }: Props) {
                 <div
                   key={p._id}
                   onClick={() => onNavigate('patient-profile', p._id)}
-                  className="grid grid-cols-[1fr_1fr_120px_100px_120px_80px] gap-4 px-5 py-4 hover:bg-slate-50 cursor-pointer transition-colors items-center"
+                  className="grid grid-cols-[1fr_1fr_120px_100px_110px_190px] gap-4 px-5 py-4 hover:bg-slate-50 cursor-pointer transition-colors items-center"
                 >
                   <div>
                     <div className="text-sm font-semibold text-slate-900">{p.name}</div>
@@ -117,16 +143,32 @@ export default function PatientList({ onNavigate }: Props) {
                   </div>
                   <StatusBadge status={p.status} />
                   <div className="text-xs text-slate-500">{new Date(p.admissionDate).toLocaleDateString('en-GB')}</div>
-                  <button
-                    onClick={e => { e.stopPropagation(); onNavigate('patient-profile', p._id); }}
-                    className="text-xs px-3 py-1.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                  >View</button>
+                  <div className="flex gap-1.5 justify-end">
+                    <button
+                      onClick={e => { e.stopPropagation(); onNavigate('patient-profile', p._id); }}
+                      className="text-xs px-3 py-1.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >View</button>
+                    {canEdit && (
+                      <button
+                        onClick={e => { e.stopPropagation(); setEditPatient(p); }}
+                        className="text-xs px-3 py-1.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors"
+                      >Edit</button>
+                    )}
+                    <button
+                      onClick={e => { e.stopPropagation(); setRemovePatient(p); }}
+                      className="text-xs px-3 py-1.5 border border-red-200 text-red-600 font-medium rounded-lg hover:bg-red-50 transition-colors"
+                    >Remove</button>
+                  </div>
                 </div>
               );
             })}
           </div>
         )}
       </div>
+
+      {showAdd && <PatientFormModal onSaved={handleChanged} onClose={() => setShowAdd(false)} />}
+      {editPatient && <PatientFormModal patient={editPatient} onSaved={handleChanged} onClose={() => setEditPatient(null)} />}
+      {removePatient && <RemovePatientDialog patient={removePatient} onDone={handleChanged} onClose={() => setRemovePatient(null)} />}
     </div>
   );
 }

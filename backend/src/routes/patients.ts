@@ -4,6 +4,7 @@ import Patient from "../models/Patient";
 import Ward from "../models/Ward";
 import { protect, authorize, AuthRequest } from "../middleware/auth";
 import { createError } from "../middleware/errorHandler";
+import { assertBedFree, occupyBed, freeBed } from "../utils/beds";
 
 const router = Router();
 router.use(protect);
@@ -46,10 +47,10 @@ router.get("/:id", async (req: AuthRequest, res: Response, next: NextFunction) =
   }
 });
 
-// POST /api/patients
+// POST /api/patients — admit a patient (admin, doctor or nurse)
 router.post(
   "/",
-  authorize("admin", "doctor"),
+  authorize("admin", "doctor", "nurse"),
   [
     body("name").notEmpty().trim(),
     body("age").isInt({ min: 0 }),
@@ -66,14 +67,23 @@ router.post(
     if (!errors.isEmpty()) return next(createError("Invalid input", 400));
 
     try {
-      const patient = await Patient.create(req.body);
+      const { name, age, gender, ward, bed, admissionDate, diagnosis, allergies, status, assignedDoctor, assignedNurse } = req.body;
 
-      // Mark bed as occupied in ward
-      await Ward.findByIdAndUpdate(
-        req.body.ward,
-        { $set: { "beds.$[el].isOccupied": true, "beds.$[el].patientId": patient._id } },
-        { arrayFilters: [{ "el.bedNumber": req.body.bed }] }
-      );
+      // Refuse to double-book a bed (or use a bed that doesn't exist).
+      await assertBedFree(ward, bed);
+
+      const patient = await Patient.create({
+        name, age, gender, ward, bed, admissionDate, diagnosis,
+        allergies, status: status === "Discharged" ? "Stable" : status,
+        assignedDoctor, assignedNurse,
+      });
+
+      try {
+        await occupyBed(ward, bed, patient._id);
+      } catch (err) {
+        await patient.deleteOne(); // don't leave a patient without a bed
+        throw err;
+      }
 
       res.status(201).json({ success: true, data: patient });
     } catch (err) {
@@ -82,29 +92,61 @@ router.post(
   }
 );
 
-// PATCH /api/patients/:id
+// PATCH /api/patients/:id — edit details, transfer bed, or discharge (admin, doctor)
 router.patch("/:id", authorize("admin", "doctor"), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const patient = await Patient.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const existing = await Patient.findById(req.params.id);
+    if (!existing) return next(createError("Patient not found", 404));
+
+    // Whitelist: vitals, medications, rounds and notes have their own endpoints.
+    const allowed = ["name", "age", "gender", "ward", "bed", "admissionDate", "diagnosis", "allergies", "status", "assignedDoctor", "assignedNurse"];
+    const updates: Record<string, unknown> = {};
+    for (const k of allowed) if (req.body[k] !== undefined) updates[k] = req.body[k];
+
+    const wasDischarged = existing.status === "Discharged";
+    const discharging = updates.status === "Discharged" && !wasDischarged;
+    const reactivating = wasDischarged && updates.status !== undefined && updates.status !== "Discharged";
+
+    const newWard = String(updates.ward ?? existing.ward);
+    const newBed = String(updates.bed ?? existing.bed);
+    const moving = newWard !== String(existing.ward) || newBed !== existing.bed;
+
+    if (discharging) {
+      // A discharged patient releases their bed; keep the old location as history.
+      delete updates.ward;
+      delete updates.bed;
+    } else if (wasDischarged && !reactivating) {
+      delete updates.ward; // can't move a discharged patient without readmitting them
+      delete updates.bed;
+    } else if (moving || reactivating) {
+      await assertBedFree(newWard, newBed, existing._id);
+    }
+
+    const patient = await Patient.findByIdAndUpdate(existing._id, updates, { new: true, runValidators: true });
     if (!patient) return next(createError("Patient not found", 404));
+
+    if (discharging) {
+      await freeBed(existing.ward, existing.bed, existing._id);
+    } else if (reactivating) {
+      await occupyBed(newWard, newBed, existing._id);
+    } else if (moving && !wasDischarged) {
+      await occupyBed(newWard, newBed, existing._id);
+      await freeBed(existing.ward, existing.bed, existing._id);
+    }
+
     res.json({ success: true, data: patient });
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /api/patients/:id — discharge / admin only
-router.delete("/:id", authorize("admin"), async (req: AuthRequest, res: Response, next: NextFunction) => {
+// DELETE /api/patients/:id — permanently remove a patient record (admin, doctor, nurse)
+router.delete("/:id", authorize("admin", "doctor", "nurse"), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const patient = await Patient.findByIdAndDelete(req.params.id);
     if (!patient) return next(createError("Patient not found", 404));
 
-    // Free the bed
-    await Ward.findByIdAndUpdate(
-      patient.ward,
-      { $set: { "beds.$[el].isOccupied": false, "beds.$[el].patientId": null } },
-      { arrayFilters: [{ "el.bedNumber": patient.bed }] }
-    );
+    await freeBed(patient.ward, patient.bed, patient._id); // free the bed if they still held it
 
     res.json({ success: true, message: "Patient record deleted" });
   } catch (err) {
@@ -164,14 +206,40 @@ router.post(
     if (!errors.isEmpty()) return next(createError("Invalid input", 400));
 
     try {
-      const med = { ...req.body, prescribedBy: req.user!._id };
-      const patient = await Patient.findByIdAndUpdate(
-        req.params.id,
-        { $push: { medications: med } },
-        { new: true }
-      );
+      const { name, dose, route, frequency, startDate, endDate } = req.body;
+
+      // `scheduledTimes` arrives as ["08:00", "20:00"]; every dose starts as Pending.
+      const times: unknown[] = Array.isArray(req.body.scheduledTimes) ? req.body.scheduledTimes : [];
+      if (!times.every((t) => typeof t === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(t))) {
+        return next(createError("Scheduled times must be in HH:mm format", 400));
+      }
+      const scheduledTimes = (times as string[]).map((time) => ({ time, status: "Pending" }));
+
+      const patient = await Patient.findById(req.params.id);
       if (!patient) return next(createError("Patient not found", 404));
-      res.status(201).json({ success: true, data: patient.medications.at(-1) });
+
+      patient.medications.push({ name, dose, route, frequency, startDate, endDate, scheduledTimes, prescribedBy: req.user!._id } as never);
+      await patient.save();
+      res.status(201).json({ success: true, data: patient.medications[patient.medications.length - 1] });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// DELETE /api/patients/:id/medications/:medId — discontinue / remove a medication order
+router.delete(
+  "/:id/medications/:medId",
+  authorize("doctor"),
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const patient = await Patient.findById(req.params.id);
+      if (!patient) return next(createError("Patient not found", 404));
+      const idx = patient.medications.findIndex((m) => String(m._id) === req.params.medId);
+      if (idx === -1) return next(createError("Medication not found", 404));
+      patient.medications.splice(idx, 1);
+      await patient.save();
+      res.json({ success: true, message: "Medication order removed" });
     } catch (err) {
       next(err);
     }

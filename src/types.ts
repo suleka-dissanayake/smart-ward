@@ -16,7 +16,9 @@ export type Screen =
   | 'admin-dashboard'
   | 'admin-patients'
   | 'admin-wards'
-  | 'admin-users';
+  | 'admin-users'
+  | 'admin-reports'
+  | 'ward-round-session';
 
 export type PatientStatus = 'Stable' | 'Attention' | 'Critical' | 'Discharged';
 

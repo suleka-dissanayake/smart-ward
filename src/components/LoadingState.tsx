@@ -13,7 +13,7 @@ export function ErrorState({ message, onBack }: { message: string; onBack?: () =
   return (
     <div className="flex-1 flex items-center justify-center bg-slate-50 p-6">
       <div className="bg-white rounded-xl border border-red-100 shadow-sm p-6 max-w-md text-center">
-        <p className="text-sm font-semibold text-red-700 mb-1">Something went wrong</p>
+        <p className="text-sm font-semibold text-red-700 mb-1">⚠ Something went wrong</p>
         <p className="text-sm text-slate-600">{message}</p>
         <p className="text-xs text-slate-400 mt-2">Check that the backend is running on port 5000 and the database is seeded.</p>
         {onBack && (

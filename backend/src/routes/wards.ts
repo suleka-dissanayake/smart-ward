@@ -4,6 +4,7 @@ import Ward from "../models/Ward";
 import { protect, authorize, AuthRequest } from "../middleware/auth";
 import { createError } from "../middleware/errorHandler";
 
+import { nextBedNumber } from "../utils/beds";
 const router = Router();
 router.use(protect);
 
@@ -50,7 +51,11 @@ router.post(
 
 router.patch("/:id", authorize("admin"), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const ward = await Ward.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    // Only name/description are editable here — beds have their own endpoints so totals stay in sync.
+    const updates: Record<string, unknown> = {};
+    if (req.body.name !== undefined) updates.name = req.body.name;
+    if (req.body.description !== undefined) updates.description = req.body.description;
+    const ward = await Ward.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
     if (!ward) return next(createError("Ward not found", 404));
     res.json({ success: true, data: ward });
   } catch (err) {
@@ -67,6 +72,49 @@ router.delete("/:id", authorize("admin"), async (req: AuthRequest, res: Response
     }
     await ward.deleteOne();
     res.json({ success: true, message: "Ward deleted" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/wards/:id/beds — add one bed (optional bedNumber) or `count` auto-numbered beds
+router.post("/:id/beds", authorize("admin"), async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const ward = await Ward.findById(req.params.id);
+    if (!ward) return next(createError("Ward not found", 404));
+
+    const requested = typeof req.body.bedNumber === "string" ? req.body.bedNumber.trim() : "";
+    const count = requested ? 1 : Math.min(Math.max(parseInt(req.body.count ?? "1", 10) || 1, 1), 50);
+
+    for (let i = 0; i < count; i++) {
+      const existing = ward.beds.map((b) => b.bedNumber);
+      const bedNumber = requested || nextBedNumber(existing);
+      if (existing.includes(bedNumber)) return next(createError(`Bed ${bedNumber} already exists in this ward`, 409));
+      ward.beds.push({ bedNumber, isOccupied: false });
+    }
+    ward.totalBeds = ward.beds.length;
+    await ward.save();
+    res.status(201).json({ success: true, data: ward });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/wards/:id/beds/:bedNumber — remove an empty bed
+router.delete("/:id/beds/:bedNumber", authorize("admin"), async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const ward = await Ward.findById(req.params.id);
+    if (!ward) return next(createError("Ward not found", 404));
+
+    const idx = ward.beds.findIndex((b) => b.bedNumber === req.params.bedNumber);
+    if (idx === -1) return next(createError("Bed not found", 404));
+    if (ward.beds[idx].isOccupied) return next(createError("Cannot remove an occupied bed — transfer or discharge the patient first", 400));
+    if (ward.beds.length === 1) return next(createError("A ward must keep at least one bed — delete the ward instead", 400));
+
+    ward.beds.splice(idx, 1);
+    ward.totalBeds = ward.beds.length;
+    await ward.save();
+    res.json({ success: true, data: ward });
   } catch (err) {
     next(err);
   }

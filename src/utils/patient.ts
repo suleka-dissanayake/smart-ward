@@ -7,6 +7,10 @@ type Named = ApiUser | { name: string } | string | null | undefined;
 export const nameOf = (x: Named): string =>
   x && typeof x === 'object' ? x.name : x ? String(x) : '—';
 
+/** Id of a field that may be populated ({ _id }) or a raw id string. */
+export const idOf = (x: { _id: string } | string | null | undefined): string =>
+  x && typeof x === 'object' ? x._id : x ? String(x) : '';
+
 export const wardNameOf = (p: ApiPatient): string => nameOf(p.ward as Named);
 
 const byDateDesc = <T,>(get: (x: T) => string) => (a: T, b: T) =>
@@ -94,3 +98,32 @@ export function buildHistory(p: ApiPatient): HistoryEntry[] {
 
   return entries.sort(byDateDesc(e => e.date));
 }
+
+// ---------- dashboard / ward-round helpers ----------
+
+export const greeting = (): string => {
+  const h = new Date().getHours();
+  return h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening';
+};
+
+export const isToday = (iso?: string): boolean => !!iso && new Date(iso).toDateString() === new Date().toDateString();
+
+/** True once a doctor has recorded a ward round for this patient today. */
+export const hadRoundToday = (p: ApiPatient): boolean => (p.wardRounds ?? []).some(r => isToday(r.date));
+
+const severity: Record<string, number> = { Critical: 0, Attention: 1, Stable: 2, Discharged: 3 };
+
+/** Sickest first, then by bed number — the order a ward round is normally walked. */
+export const bySeverity = (a: ApiPatient, b: ApiPatient): number =>
+  (severity[a.status] ?? 9) - (severity[b.status] ?? 9) || a.bed.localeCompare(b.bed, undefined, { numeric: true });
+
+/** Vitals are "due" when none are recorded, or the latest set is older than `hours`. */
+export const vitalsDue = (p: ApiPatient, hours = 6): boolean => {
+  const v = latestVitals(p);
+  return !v || Date.now() - new Date(v.recordedAt).getTime() > hours * 3_600_000;
+};
+
+export const pendingDoses = (p: ApiPatient): number =>
+  (p.medications ?? []).reduce((n, m) => n + m.scheduledTimes.filter(t => t.status === 'Pending').length, 0);
+
+export const activePatients = (list: ApiPatient[]): ApiPatient[] => list.filter(p => p.status !== 'Discharged');

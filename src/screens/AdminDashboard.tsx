@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Screen } from '../types';
-import { dashboardApi, type DashboardStats } from '../services/api';
+import { dashboardApi, patientsApi, type DashboardStats } from '../services/api';
+import { buildHistory, fmtDateTime } from '../utils/patient';
 
 interface Props {
   onNavigate: (screen: Screen) => void;
@@ -9,11 +10,21 @@ interface Props {
 export default function AdminDashboard({ onNavigate }: Props) {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [error, setError] = useState('');
+  const [activity, setActivity] = useState<{ id: string; title: string; patient: string; staff: string; date: string }[]>([]);
 
   useEffect(() => {
     dashboardApi.stats()
       .then(res => setStats(res.data))
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load dashboard'));
+
+    // Recent system activity: the latest records created across all patients.
+    patientsApi.list()
+      .then(res => setActivity(
+        res.data
+          .flatMap(p => buildHistory(p).map(h => ({ id: h.id, title: h.title, patient: p.name, staff: h.staff, date: h.date })))
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .slice(0, 8)))
+      .catch(() => { /* the stats error above already tells the user the backend is unreachable */ });
   }, []);
 
   const totalBeds    = stats?.wardSummary.reduce((a, w) => a + w.totalBeds, 0) ?? 0;
@@ -23,7 +34,7 @@ export default function AdminDashboard({ onNavigate }: Props) {
     { label: 'Total Patients',  value: stats?.totalPatients ?? '-',          color: 'bg-blue-600',  icon: '♥' },
     { label: 'Occupied Beds',   value: occupiedBeds,                          color: 'bg-amber-500', icon: '🛏' },
     { label: 'Available Beds',  value: totalBeds - occupiedBeds,              color: 'bg-green-600', icon: '✓' },
-    { label: 'Doctors',         value: stats?.totalDoctors ?? '-',            color: 'bg-indigo-50', icon: 'stethoscope' },
+    { label: 'Doctors',         value: stats?.totalDoctors ?? '-',            color: 'bg-indigo-600', icon: '⚕' },
     { label: 'Nurses',          value: stats?.totalNurses ?? '-',             color: 'bg-teal-600',  icon: '♥' },
   ];
 
@@ -97,6 +108,7 @@ export default function AdminDashboard({ onNavigate }: Props) {
                 { label: 'Add Patient',   screen: 'admin-patients' as Screen, icon: '♥',  color: 'bg-blue-50 text-blue-700' },
                 { label: 'Manage Wards',  screen: 'admin-wards'    as Screen, icon: '🏥', color: 'bg-teal-50 text-teal-700' },
                 { label: 'Manage Users',  screen: 'admin-users'    as Screen, icon: '👤', color: 'bg-purple-50 text-purple-700' },
+                { label: 'Reports',       screen: 'admin-reports'  as Screen, icon: '📊', color: 'bg-amber-50 text-amber-700' },
               ].map(a => (
                 <button key={a.label} onClick={() => onNavigate(a.screen)}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors text-left">
@@ -105,6 +117,22 @@ export default function AdminDashboard({ onNavigate }: Props) {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+            <h2 className="text-sm font-bold text-slate-900 mb-3">Recent System Activity</h2>
+            {activity.length === 0 ? (
+              <p className="text-xs text-slate-400">No activity recorded yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {activity.map(a => (
+                  <div key={a.id}>
+                    <div className="text-xs font-semibold text-slate-800">{a.title} · {a.patient}</div>
+                    <div className="text-[11px] text-slate-500">{fmtDateTime(a.date)} · {a.staff}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
