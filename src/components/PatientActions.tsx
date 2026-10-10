@@ -8,7 +8,6 @@ interface Props {
   onClose: () => void;
 }
 
-/** Permanently deletes a patient record (admin, doctor and nurse may do this). */
 export function RemovePatientDialog({ patient, onDone, onClose }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -42,7 +41,6 @@ export function RemovePatientDialog({ patient, onDone, onClose }: Props) {
   );
 }
 
-/** Marks a patient as discharged: the history is kept and the bed is freed. */
 export function DischargeDialog({ patient, onDone, onClose }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
