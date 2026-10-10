@@ -56,13 +56,10 @@ export default function Login() {
               </svg>
             </div>
             <span className="text-xl font-bold text-white">SmartWard</span>
-          </div>
+          </div><br/><br/>
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-            Digital Ward<br />Management<br />System
+            Digital Ward Round and<br />Patient Ticket Management<br />System
           </h1>
-          <p className="text-blue-200 text-sm mt-6 leading-relaxed">
-            Powered by MongoDB &amp; Express — secure JWT auth, real-time patient records.
-          </p>
         </div>
 
       </div>
@@ -78,8 +75,8 @@ export default function Login() {
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">Sign In</h2>
-                <p className="text-sm text-slate-500">Hospital Ward Management System</p>
+                <h2 className="text-2xl font-bold text-slate-900">Sign In</h2><br/>
+                <p className="text-sm text-slate-500">Ward Management System</p>
               </div>
             </div>
 

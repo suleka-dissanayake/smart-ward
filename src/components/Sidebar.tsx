@@ -55,7 +55,7 @@ export default function Sidebar({ role, currentScreen, userName, onNavigate, onL
         </div>
         <div>
           <div className="text-[15px] font-700 text-slate-900 leading-tight" style={{ fontWeight: 700 }}>SmartWard</div>
-          <div className="text-[10px] text-slate-400 leading-tight">Ward Management System</div>
+          <div className="text-[10px] text-slate-400 leading-tight">Ward Round & Ticket Management</div>
         </div>
       </div>
 
