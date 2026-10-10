@@ -27,6 +27,7 @@ export default function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState('All');
   const [toast, setToast]         = useState<{ text: string; error?: boolean } | null>(null);
 
+  // `editing === null` + `showForm` => add; `editing` set => edit
   const [showForm, setShowForm]   = useState(false);
   const [editing, setEditing]     = useState<ApiUser | null>(null);
   const [form, setForm]           = useState<FormState>({ ...EMPTY_FORM });

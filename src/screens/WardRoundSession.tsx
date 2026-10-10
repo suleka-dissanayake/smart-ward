@@ -10,6 +10,10 @@ interface Props {
   onNavigate: (screen: Screen, patientId?: string) => void;
 }
 
+/**
+ * A guided ward round: the doctor's assigned patients in priority order
+ * (critical first), with progress for today and a one-tap "next patient".
+ */
 export default function WardRoundSession({ user, onNavigate }: Props) {
   const [patients, setPatients] = useState<ApiPatient[]>([]);
   const [loading, setLoading]   = useState(true);

@@ -7,7 +7,6 @@ const DEMO_ACCOUNTS = [
   { label: 'Admin',  sub: 'Ibrahim',     email: 'ibrahim.hassan@smartward.health', password: 'admin123'  },
 ];
 
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:5000/api';
 
 export default function Login() {
   const { login }               = useAuth();
@@ -15,8 +14,6 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
-  const [seeding, setSeeding]   = useState(false);
-  const [seedMsg, setSeedMsg]   = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,20 +35,6 @@ export default function Login() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed — make sure the backend is running and the database is seeded.');
       setLoading(false);
-    }
-  };
-
-  const handleSeed = async () => {
-    setSeeding(true);
-    setSeedMsg('');
-    try {
-      const res = await fetch(`${API_BASE}/seed`, { method: 'POST' });
-      const json = await res.json();
-      setSeedMsg(json.message ?? 'Database seeded successfully!');
-    } catch {
-      setSeedMsg('Seed failed — make sure the backend is running on http://localhost:5000');
-    } finally {
-      setSeeding(false);
     }
   };
 
@@ -82,21 +65,6 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Seed helper */}
-        <div className="relative z-10">
-          <div className="bg-white/10 rounded-xl p-4 border border-white/20">
-            <p className="text-xs text-blue-200 mb-2 font-semibold">First time setup</p>
-            <p className="text-xs text-blue-100 mb-3">Populate the database with demo patients, wards, and staff.</p>
-            <button
-              onClick={handleSeed}
-              disabled={seeding}
-              className="w-full py-2 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-60"
-            >
-              {seeding ? 'Seeding database...' : '🌱 Seed Demo Data'}
-            </button>
-            {seedMsg && <p className="text-xs text-blue-100 mt-2 text-center">{seedMsg}</p>}
-          </div>
-        </div>
       </div>
 
       {/* Right panel */}
@@ -169,22 +137,8 @@ export default function Login() {
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-slate-400 text-center mt-2">
-                Seed demo data first, then sign in.
-              </p>
             </div>
 
-            {/* Mobile seed button */}
-            <div className="mt-4 pt-4 border-t border-slate-100 lg:hidden">
-              <button
-                onClick={handleSeed}
-                disabled={seeding}
-                className="w-full py-2.5 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-60"
-              >
-                {seeding ? 'Seeding...' : '🌱 Seed Demo Data'}
-              </button>
-              {seedMsg && <p className="text-xs text-slate-500 mt-1.5 text-center">{seedMsg}</p>}
-            </div>
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@ interface Props {
   subtitle?: string;
   onClose: () => void;
   children: React.ReactNode;
-  maxWidth?: string;
+  maxWidth?: string; // tailwind max-w class
 }
 
 export default function Modal({ title, subtitle, onClose, children, maxWidth = 'max-w-md' }: Props) {

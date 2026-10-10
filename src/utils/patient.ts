@@ -3,9 +3,11 @@ import type { HistoryEntry } from '../types';
 
 type Named = ApiUser | { name: string } | string | null | undefined;
 
+/** API fields are either a populated object ({ name }) or a raw id string. */
 export const nameOf = (x: Named): string =>
   x && typeof x === 'object' ? x.name : x ? String(x) : '—';
 
+/** Id of a field that may be populated ({ _id }) or a raw id string. */
 export const idOf = (x: { _id: string } | string | null | undefined): string =>
   x && typeof x === 'object' ? x._id : x ? String(x) : '';
 
@@ -22,8 +24,10 @@ export const fmtTime = (iso?: string): string =>
 
 export const fmtDateTime = (iso?: string): string => (iso ? `${fmtDate(iso)} ${fmtTime(iso)}` : '—');
 
+/** Short, human-friendly reference derived from the MongoDB id. */
 export const shortId = (id: string): string => `#${id.slice(-6).toUpperCase()}`;
 
+/** Newest first, regardless of the order the database returned them in. */
 export const sortedVitals = (p: ApiPatient): ApiVitals[] =>
   [...(p.vitals ?? [])].sort(byDateDesc(v => v.recordedAt));
 
@@ -32,6 +36,7 @@ export const latestVitals = (p: ApiPatient): ApiVitals | null => sortedVitals(p)
 export const latestWardRound = (p: ApiPatient) =>
   [...(p.wardRounds ?? [])].sort(byDateDesc(r => r.date))[0];
 
+/** Combine every clinical event for a patient into one newest-first timeline. */
 export function buildHistory(p: ApiPatient): HistoryEntry[] {
   const entries: HistoryEntry[] = [
     {
@@ -94,6 +99,8 @@ export function buildHistory(p: ApiPatient): HistoryEntry[] {
   return entries.sort(byDateDesc(e => e.date));
 }
 
+// ---------- dashboard / ward-round helpers ----------
+
 export const greeting = (): string => {
   const h = new Date().getHours();
   return h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening';
@@ -101,13 +108,16 @@ export const greeting = (): string => {
 
 export const isToday = (iso?: string): boolean => !!iso && new Date(iso).toDateString() === new Date().toDateString();
 
+/** True once a doctor has recorded a ward round for this patient today. */
 export const hadRoundToday = (p: ApiPatient): boolean => (p.wardRounds ?? []).some(r => isToday(r.date));
 
 const severity: Record<string, number> = { Critical: 0, Attention: 1, Stable: 2, Discharged: 3 };
 
+/** Sickest first, then by bed number — the order a ward round is normally walked. */
 export const bySeverity = (a: ApiPatient, b: ApiPatient): number =>
   (severity[a.status] ?? 9) - (severity[b.status] ?? 9) || a.bed.localeCompare(b.bed, undefined, { numeric: true });
 
+/** Vitals are "due" when none are recorded, or the latest set is older than `hours`. */
 export const vitalsDue = (p: ApiPatient, hours = 6): boolean => {
   const v = latestVitals(p);
   return !v || Date.now() - new Date(v.recordedAt).getTime() > hours * 3_600_000;

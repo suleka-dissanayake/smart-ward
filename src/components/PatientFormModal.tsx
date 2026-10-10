@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { idOf } from '../utils/patient';
 
 interface Props {
+  /** Pass a patient to edit; omit to register a new one. */
   patient?: ApiPatient;
   onSaved: (message: string) => void;
   onClose: () => void;
@@ -40,6 +41,7 @@ export default function PatientFormModal({ patient, onSaved, onClose }: Props) {
   });
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm(f => ({ ...f, [k]: v }));
 
+  // A bed is selectable if it is empty, or it is the one this (non-discharged) patient already holds.
   const freeBeds = (wardId: string) =>
     (wards.find(w => w._id === wardId)?.beds ?? []).filter(b =>
       !b.isOccupied ||
@@ -52,6 +54,7 @@ export default function PatientFormModal({ patient, onSaved, onClose }: Props) {
         setDoctors(d.data);
         setNurses(n.data);
         if (!editing) {
+          // Pre-select the first ward that actually has a free bed, and the current user's role.
           const ward = w.data.find(x => x.beds.some(b => !b.isOccupied)) ?? w.data[0];
           setForm(f => ({
             ...f,
@@ -64,6 +67,7 @@ export default function PatientFormModal({ patient, onSaved, onClose }: Props) {
       })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load form data'))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const changeWard = (wardId: string) => {
@@ -108,6 +112,7 @@ export default function PatientFormModal({ patient, onSaved, onClose }: Props) {
     }
   };
 
+  // Keep the current assignee selectable even if they have since been deactivated.
   const withCurrent = (list: ApiUser[], current: ApiUser | string | undefined) => {
     const id = idOf(current as { _id: string } | string);
     if (!id || list.some(u => u._id === id)) return list;

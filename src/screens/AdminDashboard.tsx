@@ -17,13 +17,14 @@ export default function AdminDashboard({ onNavigate }: Props) {
       .then(res => setStats(res.data))
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load dashboard'));
 
+    // Recent system activity: the latest records created across all patients.
     patientsApi.list()
       .then(res => setActivity(
         res.data
           .flatMap(p => buildHistory(p).map(h => ({ id: h.id, title: h.title, patient: p.name, staff: h.staff, date: h.date })))
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .slice(0, 8)))
-      .catch(() => {});
+      .catch(() => { /* the stats error above already tells the user the backend is unreachable */ });
   }, []);
 
   const totalBeds    = stats?.wardSummary.reduce((a, w) => a + w.totalBeds, 0) ?? 0;
