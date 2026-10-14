@@ -19,6 +19,7 @@ async function main() {
   console.log("Seeding SmartWard database...\n");
   await seedDatabase((msg) => console.log(msg));
 
+  // These are just demo data to check whether functionalities are working or not
   console.log("\nSeed complete!\n");
   console.log("Login credentials");
   console.log("─────────────────────────────────────────────────────");

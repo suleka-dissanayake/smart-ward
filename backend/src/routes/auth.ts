@@ -7,6 +7,7 @@ import { createError } from "../middleware/errorHandler";
 
 const router = Router();
 
+// Verify with JWT tokens
 const signToken = (id: string, role: string): string =>
   jwt.sign({ id, role }, process.env.JWT_SECRET!, { expiresIn: (process.env.JWT_EXPIRES_IN ?? "7d") as unknown as number });
 
