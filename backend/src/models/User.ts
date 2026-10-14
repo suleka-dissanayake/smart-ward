@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcryptjs"; // we use simple bcryptjs hashing. (didn't go with robust argon2id)
 
 export type UserRole = "doctor" | "nurse" | "admin";
 
