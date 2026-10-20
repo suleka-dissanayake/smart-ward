@@ -1,6 +1,6 @@
 # SmartWard
 
-**Hospital Ward Round & In-Patient Record Management System**
+**Hospital Ward Round & Patient Ticket Management System**
 
 SmartWard is a tablet-first web application that helps doctors, nurses, and ward administrators manage admitted patients from a single, organised system — replacing scattered handwritten ward charts with structured, searchable digital records.
 
@@ -69,7 +69,7 @@ SmartWard focuses on digitising the **ward-round workflow**: vital signs, medica
 |---|---|
 | UI Library | [React 19](https://react.dev) |
 | Language | [TypeScript](https://www.typescriptlang.org) |
-| Styling | [Tailwind CSS v4](https://tailwindcss.com) |
+| Styling | [CSS with Tailwind CSS v4](https://tailwindcss.com) |
 | Build Tool | [Vite](https://vitejs.dev) |
 | Package Manager | [pnpm](https://pnpm.io) |
 
@@ -95,7 +95,6 @@ The app was prototyped screen-by-screen for all three roles, then built as reusa
 | Admin – Patients | Manage patient records |
 | Admin – Wards | Manage wards & beds |
 | Admin – Users | Manage doctor/nurse/admin accounts |
-| ER Diagram | Entity-relationship view of the data model |
 
 ## Data Model
 
@@ -121,7 +120,7 @@ See [`src/types.ts`](./src/types.ts) for the full definitions.
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/smartward.git
+git clone https://github.com/suleka-dissanayake/smartward.git
 cd smartward
 
 # Install dependencies

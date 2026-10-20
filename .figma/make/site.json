@@ -1,0 +1,10 @@
+{
+  "description": "Create stunning designs effortlessly with intuitive tools tailored for both beginners and professionals, enhancing creativity and productivity.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
