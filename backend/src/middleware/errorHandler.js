@@ -2,7 +2,6 @@ export const errorHandler = (err, _req, res, _next) => {
   let statusCode = err.statusCode ?? 500;
   let message = err.isOperational ? err.message : "Internal server error";
 
-  // Translate common Mongoose / MongoDB errors into client errors instead of opaque 500s.
   if (err.name === "CastError") {
     statusCode = 400;
     message = "Invalid ID format";

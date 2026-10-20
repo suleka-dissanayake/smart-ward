@@ -1,7 +1,3 @@
-// One-command database seeding:
-//   npm run seed          -> wipe + insert demo data
-//   npm run seed:clear    -> wipe only (no demo data)
-
 import "dotenv/config";
 import mongoose from "mongoose";
 import { connectDB } from "./db.js";

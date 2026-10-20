@@ -74,7 +74,7 @@ router.post(
 router.patch("/:id", authorize("admin"), async (req, res, next) => {
   try {
     const { password, ...updates } = req.body;
-    // Don't let an admin lock themselves out or demote themselves.
+    
     if (
       String(req.user._id) === req.params.id &&
       (updates.status === "Inactive" || (updates.role && updates.role !== "admin"))
