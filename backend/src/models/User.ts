@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcryptjs"; // we use simple bcryptjs hashing. (didn't go with robust argon2id)
 
 export type UserRole = "doctor" | "nurse" | "admin";
 
@@ -39,7 +39,7 @@ UserSchema.methods.comparePassword = function (candidate: string): Promise<boole
 
 UserSchema.set("toJSON", {
   transform: (_doc, ret) => {
-    delete ret.password;
+    delete (ret as { password?: unknown }).password;
     return ret;
   },
 });

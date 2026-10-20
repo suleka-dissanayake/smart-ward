@@ -8,13 +8,12 @@ import { protect, AuthRequest } from "../middleware/auth";
 const router = Router();
 router.use(protect);
 
-// GET /api/dashboard — role-aware summary stats
 router.get("/", async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const role = req.user!.role;
     const userId = req.user!._id;
 
-    const [totalPatients, criticalPatients, stablePatients, attentionPatients, totalWards, totalUsers, unreadNotifications] =
+    const [totalPatients, criticalPatients, stablePatients, attentionPatients, totalWards, totalUsers, totalDoctors, totalNurses, unreadNotifications] =
       await Promise.all([
         Patient.countDocuments(role === "doctor" ? { assignedDoctor: userId } : role === "nurse" ? { assignedNurse: userId } : {}),
         Patient.countDocuments({ status: "Critical", ...(role === "doctor" ? { assignedDoctor: userId } : role === "nurse" ? { assignedNurse: userId } : {}) }),
@@ -22,6 +21,8 @@ router.get("/", async (req: AuthRequest, res: Response, next: NextFunction) => {
         Patient.countDocuments({ status: "Attention", ...(role === "doctor" ? { assignedDoctor: userId } : role === "nurse" ? { assignedNurse: userId } : {}) }),
         Ward.countDocuments(),
         User.countDocuments(),
+        User.countDocuments({ role: "doctor", status: "Active" }),
+        User.countDocuments({ role: "nurse", status: "Active" }),
         Notification.countDocuments({
           $or: [{ recipient: userId }, { recipientRole: role }, { recipientRole: "all" }],
           isRead: false,
@@ -45,6 +46,8 @@ router.get("/", async (req: AuthRequest, res: Response, next: NextFunction) => {
         attentionPatients,
         totalWards,
         totalUsers,
+        totalDoctors,
+        totalNurses,
         unreadNotifications,
         wardSummary,
       },

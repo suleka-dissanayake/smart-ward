@@ -21,6 +21,7 @@ export interface IScheduledDose {
 }
 
 export interface IMedication {
+  _id?: mongoose.Types.ObjectId;
   name: string;
   dose: string;
   route: string;

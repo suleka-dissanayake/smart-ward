@@ -7,7 +7,6 @@ import { createError } from "../middleware/errorHandler";
 const router = Router();
 router.use(protect);
 
-// GET /api/notifications — returns notifications for the current user's role
 router.get("/", async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const notifications = await Notification.find({
@@ -28,18 +27,6 @@ router.get("/", async (req: AuthRequest, res: Response, next: NextFunction) => {
   }
 });
 
-// PATCH /api/notifications/:id/read
-router.patch("/:id/read", async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const n = await Notification.findByIdAndUpdate(req.params.id, { isRead: true }, { new: true });
-    if (!n) return next(createError("Notification not found", 404));
-    res.json({ success: true, data: n });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// PATCH /api/notifications/read-all
 router.patch("/read-all", async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     await Notification.updateMany(
@@ -55,7 +42,16 @@ router.patch("/read-all", async (req: AuthRequest, res: Response, next: NextFunc
   }
 });
 
-// POST /api/notifications — admin/doctor can broadcast
+router.patch("/:id/read", async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const n = await Notification.findByIdAndUpdate(req.params.id, { isRead: true }, { new: true });
+    if (!n) return next(createError("Notification not found", 404));
+    res.json({ success: true, data: n });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post(
   "/",
   authorize("admin", "doctor"),
