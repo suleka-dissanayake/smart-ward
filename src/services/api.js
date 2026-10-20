@@ -1,3 +1,5 @@
+// We are going to run this locally
+
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api';
 const TOKEN_KEY = 'smartward_token';
 
