@@ -1,7 +1,0 @@
-{
-  "watch": [
-    "src"
-  ],
-  "ext": "js,json",
-  "exec": "node src/index.js"
-}
