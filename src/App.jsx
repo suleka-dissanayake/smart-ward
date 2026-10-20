@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Screen } from './types';
+
 import { useAuth } from './context/AuthContext';
 
 import Sidebar from './components/Sidebar';
@@ -25,24 +25,24 @@ import { notificationsApi } from './services/api';
 
 function AppShell() {
   const { user, loading, logout } = useAuth();
-  const [screen, setScreen] = useState<Screen>('login');
-  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
-  const [history, setHistory] = useState<{ screen: Screen; patientId: string | null }[]>([]);
+  const [screen, setScreen] = useState('login');
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
+  const [history, setHistory] = useState([]);
   const [notifCount, setNotifCount] = useState(0);
-  const [inSession, setInSession] = useState(false);
+  const [inSession, setInSession] = useState(false); // true while the doctor is walking a guided ward round
 
+  // Real unread count for the sidebar badge (admins have no notifications screen).
   useEffect(() => {
     if (!user || user.role === 'admin') return;
-    notificationsApi.list()
-      .then(res => setNotifCount(res.data.filter(n => !n.isRead).length))
+    notificationsApi
+      .list()
+      .then((res) => setNotifCount(res.data.filter((n) => !n.isRead).length))
       .catch(() => setNotifCount(0));
   }, [user]);
 
   useEffect(() => {
     if (user) {
-      const defaultScreen: Screen =
-        user.role === 'doctor' ? 'doctor-dashboard' :
-        user.role === 'nurse'  ? 'nurse-dashboard'  : 'admin-dashboard';
+      const defaultScreen = user.role === 'doctor' ? 'doctor-dashboard' : user.role === 'nurse' ? 'nurse-dashboard' : 'admin-dashboard';
       setScreen(defaultScreen);
       setHistory([]);
       setInSession(false);
@@ -51,10 +51,10 @@ function AppShell() {
     }
   }, [user, loading]);
 
-  const navigate = (s: Screen, patientId?: string) => {
+  const navigate = (s, patientId) => {
     if (s === 'ward-round-session') setInSession(true);
     else if (['doctor-dashboard', 'nurse-dashboard', 'patient-list', 'ward-bed', 'notifications'].includes(s)) setInSession(false);
-    setHistory(prev => [...prev, { screen, patientId: selectedPatientId }]);
+    setHistory((prev) => [...prev, { screen, patientId: selectedPatientId }]);
     setScreen(s);
     if (patientId !== undefined) setSelectedPatientId(patientId);
   };
@@ -64,7 +64,7 @@ function AppShell() {
     if (prev) {
       setScreen(prev.screen);
       setSelectedPatientId(prev.patientId);
-      setHistory(h => h.slice(0, -1));
+      setHistory((h) => h.slice(0, -1));
     }
   };
 
@@ -91,7 +91,7 @@ function AppShell() {
   }
 
   const pid = selectedPatientId ?? '';
-  const needsPatient: Screen[] = ['patient-profile','patient-history','record-vitals','medications','ward-round','nursing-notes'];
+  const needsPatient = ['patient-profile', 'patient-history', 'record-vitals', 'medications', 'ward-round', 'nursing-notes'];
 
   const renderScreen = () => {
     if (needsPatient.includes(screen) && !pid) {
@@ -131,9 +131,11 @@ function AppShell() {
       case 'admin-reports':
         return <Reports />;
       case 'ward-round-session':
-        return user.role === 'doctor'
-          ? <WardRoundSession user={user} onNavigate={navigate} />
-          : <DoctorDashboard user={user} onNavigate={navigate} />;
+        return user.role === 'doctor' ? (
+          <WardRoundSession user={user} onNavigate={navigate} />
+        ) : (
+          <DoctorDashboard user={user} onNavigate={navigate} />
+        );
       default:
         return <DoctorDashboard user={user} onNavigate={navigate} />;
     }
@@ -149,9 +151,7 @@ function AppShell() {
         onLogout={handleLogout}
         notifCount={notifCount}
       />
-      <main className="flex-1 flex flex-col overflow-hidden bg-slate-50">
-        {renderScreen()}
-      </main>
+      <main className="flex-1 flex flex-col overflow-hidden bg-slate-50">{renderScreen()}</main>
     </div>
   );
 }
