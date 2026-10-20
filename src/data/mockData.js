@@ -1,23 +1,22 @@
-import type { Patient, AppUser, Ward } from '../types';
 
-export const mockUsers: AppUser[] = [
+export const mockUsers = [
   { id: 'D001', name: 'Dr. Ahmed Al-Farouk', role: 'doctor', email: 'ahmed.alfarouk@smartward.health', department: 'Internal Medicine', status: 'Active' },
   { id: 'D002', name: 'Dr. Sarah Mitchell', role: 'doctor', email: 'sarah.mitchell@smartward.health', department: 'Surgery', status: 'Active' },
   { id: 'D003', name: 'Dr. Yusuf Osman', role: 'doctor', email: 'yusuf.osman@smartward.health', department: 'Cardiology', status: 'Active' },
   { id: 'N001', name: 'Nurse Aisha Karimi', role: 'nurse', email: 'aisha.karimi@smartward.health', department: 'Medical Ward', status: 'Active' },
   { id: 'N002', name: 'Nurse James Okonkwo', role: 'nurse', email: 'james.okonkwo@smartward.health', department: 'Surgical Ward', status: 'Active' },
   { id: 'N003', name: 'Nurse Leila Nour', role: 'nurse', email: 'leila.nour@smartward.health', department: 'Medical Ward', status: 'Active' },
-  { id: 'A001', name: 'Ibrahim Hassan', role: 'admin', email: 'ibrahim.hassan@smartward.health', department: 'Administration', status: 'Active' },
+  { id: 'A001', name: 'Ibrahim Hassan', role: 'admin', email: 'ibrahim.hassan@smartward.health', department: 'Administration', status: 'Active' }
 ];
 
-export const mockWards: Ward[] = [
+export const mockWards = [
   { id: 'W1', name: 'Medical Ward A', totalBeds: 20, occupiedBeds: 15 },
   { id: 'W2', name: 'Surgical Ward B', totalBeds: 16, occupiedBeds: 11 },
   { id: 'W3', name: 'Cardiac Ward C', totalBeds: 12, occupiedBeds: 9 },
-  { id: 'W4', name: 'Respiratory Ward D', totalBeds: 10, occupiedBeds: 6 },
+  { id: 'W4', name: 'Respiratory Ward D', totalBeds: 10, occupiedBeds: 6 }
 ];
 
-export const mockPatients: Patient[] = [
+export const mockPatients = [
   {
     id: 'P-10042',
     name: 'Mohammed Al-Rashidi',
@@ -39,7 +38,7 @@ export const mockPatients: Patient[] = [
       spo2: '97%',
       painScore: 3,
       recordedAt: '2026-08-16 07:30',
-      recordedBy: 'Nurse Aisha Karimi',
+      recordedBy: 'Nurse Aisha Karimi'
     },
     medications: [
       {
@@ -52,8 +51,8 @@ export const mockPatients: Patient[] = [
         endDate: '2026-08-24',
         scheduledTimes: [
           { time: '08:00', status: 'Administered', administeredAt: '08:05', administeredBy: 'Nurse Aisha Karimi' },
-          { time: '20:00', status: 'Pending' },
-        ],
+          { time: '20:00', status: 'Pending' }
+        ]
       },
       {
         id: 'M2',
@@ -65,8 +64,8 @@ export const mockPatients: Patient[] = [
         endDate: '2026-08-24',
         scheduledTimes: [
           { time: '08:00', status: 'Administered', administeredAt: '08:07', administeredBy: 'Nurse Aisha Karimi' },
-          { time: '20:00', status: 'Pending' },
-        ],
+          { time: '20:00', status: 'Pending' }
+        ]
       },
       {
         id: 'M3',
@@ -77,9 +76,9 @@ export const mockPatients: Patient[] = [
         startDate: '2026-08-12',
         endDate: '2026-08-18',
         scheduledTimes: [
-          { time: '10:00', status: 'Administered', administeredAt: '10:10', administeredBy: 'Nurse Aisha Karimi' },
-        ],
-      },
+          { time: '10:00', status: 'Administered', administeredAt: '10:10', administeredBy: 'Nurse Aisha Karimi' }
+        ]
+      }
     ],
     wardRounds: [
       {
@@ -89,7 +88,7 @@ export const mockPatients: Patient[] = [
         assessment: 'Patient remains hypertensive despite current regimen. Renal function slightly impaired. Oedema improving.',
         clinicalNotes: 'BP 160/98 on review. Creatinine 142 μmol/L. Urine output adequate at 55 mL/hr. No chest pain or dyspnoea.',
         treatmentPlan: 'Continue Amlodipine and Furosemide. Add Ramipril 2.5 mg OD. Repeat U&E tomorrow morning. Low-salt diet reinforced.',
-        nextReview: '2026-08-17',
+        nextReview: '2026-08-17'
       },
       {
         id: 'WR2',
@@ -98,22 +97,22 @@ export const mockPatients: Patient[] = [
         assessment: 'Newly admitted with uncontrolled hypertension. Bilateral ankle oedema noted. BGL elevated.',
         clinicalNotes: 'Conscious and oriented. BP 168/102 on admission. Mild periorbital puffiness. Random BGL 14.2 mmol/L.',
         treatmentPlan: 'Start Amlodipine, Metformin, and Furosemide IV. Restrict fluids to 1.5 L/day. Daily bloods.',
-        nextReview: '2026-08-14',
-      },
+        nextReview: '2026-08-14'
+      }
     ],
     nursingNotes: [
       {
         id: 'NN1',
         date: '2026-08-16 06:00',
         nurse: 'Nurse Aisha Karimi',
-        note: 'Patient slept well. Urinated 3 times overnight. Morning BP 158/96. No complaints. Diet taken fully at breakfast.',
+        note: 'Patient slept well. Urinated 3 times overnight. Morning BP 158/96. No complaints. Diet taken fully at breakfast.'
       },
       {
         id: 'NN2',
         date: '2026-08-15 22:00',
         nurse: 'Nurse Leila Nour',
-        note: 'Evening medications administered. Patient anxious about kidney results. Reassured and explained monitoring plan. BP 162/100 at 22:00.',
-      },
+        note: 'Evening medications administered. Patient anxious about kidney results. Reassured and explained monitoring plan. BP 162/100 at 22:00.'
+      }
     ],
     history: [
       { id: 'H1', type: 'ward-round', date: '2026-08-15 09:00', title: 'Ward Round', summary: 'BP remains elevated. Ramipril added. Renal function monitored.', staff: 'Dr. Ahmed Al-Farouk' },
@@ -121,8 +120,8 @@ export const mockPatients: Patient[] = [
       { id: 'H3', type: 'nursing-note', date: '2026-08-15 22:00', title: 'Nursing Note', summary: 'Evening medications given. Patient reassured regarding renal results.', staff: 'Nurse Leila Nour' },
       { id: 'H4', type: 'ward-round', date: '2026-08-12 10:15', title: 'Ward Round', summary: 'Admitted with uncontrolled HTN. Treatment plan initiated.', staff: 'Dr. Ahmed Al-Farouk' },
       { id: 'H5', type: 'medication', date: '2026-08-12 12:00', title: 'Medications Started', summary: 'Amlodipine, Metformin, Furosemide IV commenced.', staff: 'Nurse Aisha Karimi' },
-      { id: 'H6', type: 'admission', date: '2026-08-10 14:30', title: 'Patient Admitted', summary: 'Admitted to Medical Ward A, Bed A-04. Diagnosis: Hypertension with Diabetic Nephropathy.', staff: 'Dr. Ahmed Al-Farouk' },
-    ],
+      { id: 'H6', type: 'admission', date: '2026-08-10 14:30', title: 'Patient Admitted', summary: 'Admitted to Medical Ward A, Bed A-04. Diagnosis: Hypertension with Diabetic Nephropathy.', staff: 'Dr. Ahmed Al-Farouk' }
+    ]
   },
   {
     id: 'P-10078',
@@ -145,7 +144,7 @@ export const mockPatients: Patient[] = [
       spo2: '99%',
       painScore: 2,
       recordedAt: '2026-08-16 07:00',
-      recordedBy: 'Nurse James Okonkwo',
+      recordedBy: 'Nurse James Okonkwo'
     },
     medications: [
       {
@@ -160,9 +159,9 @@ export const mockPatients: Patient[] = [
           { time: '06:00', status: 'Administered', administeredAt: '06:10', administeredBy: 'Nurse James Okonkwo' },
           { time: '12:00', status: 'Pending' },
           { time: '18:00', status: 'Pending' },
-          { time: '00:00', status: 'Administered', administeredAt: '00:05', administeredBy: 'Nurse Leila Nour' },
-        ],
-      },
+          { time: '00:00', status: 'Administered', administeredAt: '00:05', administeredBy: 'Nurse Leila Nour' }
+        ]
+      }
     ],
     wardRounds: [
       {
@@ -172,22 +171,22 @@ export const mockPatients: Patient[] = [
         assessment: 'Post-op day 2. Good recovery. Wound clean, no signs of infection. Tolerating oral fluids.',
         clinicalNotes: 'Afebrile, abdomen soft. Port site wounds clean and dry. Passing flatus. Mobilising well with nursing support.',
         treatmentPlan: 'Step down IV paracetamol to oral. Advance diet to soft solids. Plan for discharge on day 3 if progressing well.',
-        nextReview: '2026-08-17',
-      },
+        nextReview: '2026-08-17'
+      }
     ],
     nursingNotes: [
       {
         id: 'NN3',
         date: '2026-08-16 06:30',
         nurse: 'Nurse James Okonkwo',
-        note: 'Patient comfortable. Slept well. Wound dressing intact and dry. Tolerating clear fluids. Mobilised to bathroom independently.',
-      },
+        note: 'Patient comfortable. Slept well. Wound dressing intact and dry. Tolerating clear fluids. Mobilised to bathroom independently.'
+      }
     ],
     history: [
       { id: 'H7', type: 'ward-round', date: '2026-08-16 08:30', title: 'Ward Round', summary: 'Good recovery, plan for discharge day 3.', staff: 'Dr. Sarah Mitchell' },
       { id: 'H8', type: 'vitals', date: '2026-08-16 07:00', title: 'Vital Signs Recorded', summary: 'All vitals within normal limits. Pain score 2/10.', staff: 'Nurse James Okonkwo' },
-      { id: 'H9', type: 'admission', date: '2026-08-14 11:00', title: 'Patient Admitted', summary: 'Admitted for elective laparoscopic cholecystectomy. Surgery completed without complications.', staff: 'Dr. Sarah Mitchell' },
-    ],
+      { id: 'H9', type: 'admission', date: '2026-08-14 11:00', title: 'Patient Admitted', summary: 'Admitted for elective laparoscopic cholecystectomy. Surgery completed without complications.', staff: 'Dr. Sarah Mitchell' }
+    ]
   },
   {
     id: 'P-10091',
@@ -210,7 +209,7 @@ export const mockPatients: Patient[] = [
       spo2: '92%',
       painScore: 4,
       recordedAt: '2026-08-16 06:45',
-      recordedBy: 'Nurse Aisha Karimi',
+      recordedBy: 'Nurse Aisha Karimi'
     },
     medications: [
       {
@@ -223,8 +222,8 @@ export const mockPatients: Patient[] = [
         endDate: '2026-08-20',
         scheduledTimes: [
           { time: '06:00', status: 'Administered', administeredAt: '06:15', administeredBy: 'Nurse Aisha Karimi' },
-          { time: '10:00', status: 'Pending' },
-        ],
+          { time: '10:00', status: 'Pending' }
+        ]
       },
       {
         id: 'M6',
@@ -235,9 +234,9 @@ export const mockPatients: Patient[] = [
         startDate: '2026-08-13',
         endDate: '2026-08-18',
         scheduledTimes: [
-          { time: '08:00', status: 'Administered', administeredAt: '08:10', administeredBy: 'Nurse Aisha Karimi' },
-        ],
-      },
+          { time: '08:00', status: 'Administered', administeredAt: '08:10', administeredBy: 'Nurse Aisha Karimi' }
+        ]
+      }
     ],
     wardRounds: [
       {
@@ -247,22 +246,22 @@ export const mockPatients: Patient[] = [
         assessment: 'SpO2 improving on controlled oxygen. Still requiring frequent nebulisations. Work of breathing reduced compared to admission.',
         clinicalNotes: 'On 2L/min O2 via nasal prongs. Chest clear to auscultation. CXR shows hyperinflation, no new consolidation.',
         treatmentPlan: 'Continue nebulisations and Prednisolone. Add Amoxicillin-Clavulanate 875/125 mg BD empirically. Target SpO2 88-92%. Daily review.',
-        nextReview: '2026-08-16',
-      },
+        nextReview: '2026-08-16'
+      }
     ],
     nursingNotes: [
       {
         id: 'NN4',
         date: '2026-08-16 06:50',
         nurse: 'Nurse Aisha Karimi',
-        note: 'SpO2 92% on 2L O2. RR 24. Patient appears more comfortable than yesterday. Morning nebulisation completed. Encouraged deep breathing exercises.',
-      },
+        note: 'SpO2 92% on 2L O2. RR 24. Patient appears more comfortable than yesterday. Morning nebulisation completed. Encouraged deep breathing exercises.'
+      }
     ],
     history: [
       { id: 'H10', type: 'vitals', date: '2026-08-16 06:45', title: 'Vital Signs Recorded', summary: 'SpO2 92%, RR 24/min, Temp 38.1°C. Monitoring closely.', staff: 'Nurse Aisha Karimi' },
       { id: 'H11', type: 'ward-round', date: '2026-08-15 09:30', title: 'Ward Round', summary: 'Antibiotics added. Target SpO2 88-92%.', staff: 'Dr. Ahmed Al-Farouk' },
-      { id: 'H12', type: 'admission', date: '2026-08-13 16:00', title: 'Patient Admitted', summary: 'Admitted with COPD exacerbation. SpO2 86% on air. Started on oxygen and nebulisations.', staff: 'Dr. Ahmed Al-Farouk' },
-    ],
+      { id: 'H12', type: 'admission', date: '2026-08-13 16:00', title: 'Patient Admitted', summary: 'Admitted with COPD exacerbation. SpO2 86% on air. Started on oxygen and nebulisations.', staff: 'Dr. Ahmed Al-Farouk' }
+    ]
   },
   {
     id: 'P-10103',
@@ -285,7 +284,7 @@ export const mockPatients: Patient[] = [
       spo2: '96%',
       painScore: 2,
       recordedAt: '2026-08-16 07:15',
-      recordedBy: 'Nurse Aisha Karimi',
+      recordedBy: 'Nurse Aisha Karimi'
     },
     medications: [
       {
@@ -298,15 +297,15 @@ export const mockPatients: Patient[] = [
         endDate: '2026-08-22',
         scheduledTimes: [
           { time: '08:00', status: 'Administered', administeredAt: '08:12', administeredBy: 'Nurse Aisha Karimi' },
-          { time: '20:00', status: 'Pending' },
-        ],
-      },
+          { time: '20:00', status: 'Pending' }
+        ]
+      }
     ],
     wardRounds: [],
     nursingNotes: [],
     history: [
-      { id: 'H13', type: 'admission', date: '2026-08-15 10:30', title: 'Patient Admitted', summary: 'Admitted with right lower lobe pneumonia. Commenced antibiotics.', staff: 'Dr. Ahmed Al-Farouk' },
-    ],
+      { id: 'H13', type: 'admission', date: '2026-08-15 10:30', title: 'Patient Admitted', summary: 'Admitted with right lower lobe pneumonia. Commenced antibiotics.', staff: 'Dr. Ahmed Al-Farouk' }
+    ]
   },
   {
     id: 'P-10057',
@@ -329,7 +328,7 @@ export const mockPatients: Patient[] = [
       spo2: '90%',
       painScore: 5,
       recordedAt: '2026-08-16 06:00',
-      recordedBy: 'Nurse Leila Nour',
+      recordedBy: 'Nurse Leila Nour'
     },
     medications: [
       {
@@ -342,8 +341,8 @@ export const mockPatients: Patient[] = [
         endDate: '2026-08-20',
         scheduledTimes: [
           { time: '06:00', status: 'Administered', administeredAt: '06:05', administeredBy: 'Nurse Leila Nour' },
-          { time: '14:00', status: 'Pending' },
-        ],
+          { time: '14:00', status: 'Pending' }
+        ]
       },
       {
         id: 'M9',
@@ -354,16 +353,16 @@ export const mockPatients: Patient[] = [
         startDate: '2026-08-08',
         endDate: '2026-08-30',
         scheduledTimes: [
-          { time: '08:00', status: 'Administered', administeredAt: '08:08', administeredBy: 'Nurse Leila Nour' },
-        ],
-      },
+          { time: '08:00', status: 'Administered', administeredAt: '08:08', administeredBy: 'Nurse Leila Nour' }
+        ]
+      }
     ],
     wardRounds: [],
     nursingNotes: [],
     history: [
       { id: 'H14', type: 'vitals', date: '2026-08-16 06:00', title: 'Vital Signs Recorded', summary: 'SpO2 90%, HR 110, RR 26. Critical monitoring.', staff: 'Nurse Leila Nour' },
-      { id: 'H15', type: 'admission', date: '2026-08-08 09:00', title: 'Patient Admitted', summary: 'Admitted with severe dyspnoea and bilateral pulmonary oedema. Commenced IV diuresis.', staff: 'Dr. Yusuf Osman' },
-    ],
+      { id: 'H15', type: 'admission', date: '2026-08-08 09:00', title: 'Patient Admitted', summary: 'Admitted with severe dyspnoea and bilateral pulmonary oedema. Commenced IV diuresis.', staff: 'Dr. Yusuf Osman' }
+    ]
   },
   {
     id: 'P-10115',
@@ -386,7 +385,7 @@ export const mockPatients: Patient[] = [
       spo2: '99%',
       painScore: 3,
       recordedAt: '2026-08-16 08:00',
-      recordedBy: 'Nurse James Okonkwo',
+      recordedBy: 'Nurse James Okonkwo'
     },
     medications: [
       {
@@ -398,55 +397,61 @@ export const mockPatients: Patient[] = [
         startDate: '2026-08-16',
         endDate: '2026-08-18',
         scheduledTimes: [
-          { time: '07:00', status: 'Administered', administeredAt: '07:15', administeredBy: 'Nurse James Okonkwo' },
-        ],
-      },
+          { time: '07:00', status: 'Administered', administeredAt: '07:15', administeredBy: 'Nurse James Okonkwo' }
+        ]
+      }
     ],
     wardRounds: [],
     nursingNotes: [],
     history: [
-      { id: 'H16', type: 'admission', date: '2026-08-16 02:30', title: 'Patient Admitted', summary: 'Emergency admission. Appendicectomy performed. Recovering in Surgical Ward.', staff: 'Dr. Sarah Mitchell' },
-    ],
-  },
+      { id: 'H16', type: 'admission', date: '2026-08-16 02:30', title: 'Patient Admitted', summary: 'Emergency admission. Appendicectomy performed. Recovering in Surgical Ward.', staff: 'Dr. Sarah Mitchell' }
+    ]
+  }
 ];
 
-export const getBedLayout = (ward: string) => {
+export const getBedLayout = (ward) => {
   const allBeds = [
-    { bed: 'A-01', patient: null, status: 'Available' as const },
-    { bed: 'A-02', patient: null, status: 'Available' as const },
-    { bed: 'A-03', patient: null, status: 'Available' as const },
-    { bed: 'A-04', patient: mockPatients[0], status: 'Attention' as const },
-    { bed: 'A-05', patient: null, status: 'Available' as const },
-    { bed: 'A-06', patient: null, status: 'Available' as const },
-    { bed: 'A-07', patient: null, status: 'Available' as const },
-    { bed: 'A-08', patient: null, status: 'Available' as const },
-    { bed: 'A-09', patient: null, status: 'Available' as const },
-    { bed: 'A-10', patient: null, status: 'Available' as const },
-    { bed: 'A-11', patient: mockPatients[3], status: 'Stable' as const },
-    { bed: 'A-12', patient: null, status: 'Available' as const },
-    { bed: 'B-01', patient: null, status: 'Available' as const },
-    { bed: 'B-02', patient: null, status: 'Available' as const },
-    { bed: 'B-03', patient: null, status: 'Available' as const },
-    { bed: 'B-04', patient: null, status: 'Available' as const },
-    { bed: 'B-05', patient: null, status: 'Available' as const },
-    { bed: 'B-06', patient: null, status: 'Available' as const },
-    { bed: 'B-07', patient: mockPatients[5], status: 'Stable' as const },
-    { bed: 'B-08', patient: null, status: 'Available' as const },
-    { bed: 'B-09', patient: null, status: 'Available' as const },
-    { bed: 'B-10', patient: null, status: 'Available' as const },
-    { bed: 'B-11', patient: null, status: 'Available' as const },
-    { bed: 'B-12', patient: mockPatients[1], status: 'Stable' as const },
-    { bed: 'C-01', patient: null, status: 'Available' as const },
-    { bed: 'C-02', patient: null, status: 'Available' as const },
-    { bed: 'C-03', patient: null, status: 'Available' as const },
-    { bed: 'C-04', patient: null, status: 'Available' as const },
-    { bed: 'C-05', patient: null, status: 'Available' as const },
-    { bed: 'C-06', patient: mockPatients[4], status: 'Critical' as const },
-    { bed: 'D-01', patient: null, status: 'Available' as const },
-    { bed: 'D-02', patient: null, status: 'Available' as const },
-    { bed: 'D-03', patient: mockPatients[2], status: 'Attention' as const },
-    { bed: 'D-04', patient: null, status: 'Available' as const },
+    { bed: 'A-01', patient: null, status: 'Available' },
+    { bed: 'A-02', patient: null, status: 'Available' },
+    { bed: 'A-03', patient: null, status: 'Available' },
+    { bed: 'A-04', patient: mockPatients[0], status: 'Attention' },
+    { bed: 'A-05', patient: null, status: 'Available' },
+    { bed: 'A-06', patient: null, status: 'Available' },
+    { bed: 'A-07', patient: null, status: 'Available' },
+    { bed: 'A-08', patient: null, status: 'Available' },
+    { bed: 'A-09', patient: null, status: 'Available' },
+    { bed: 'A-10', patient: null, status: 'Available' },
+    { bed: 'A-11', patient: mockPatients[3], status: 'Stable' },
+    { bed: 'A-12', patient: null, status: 'Available' },
+    { bed: 'B-01', patient: null, status: 'Available' },
+    { bed: 'B-02', patient: null, status: 'Available' },
+    { bed: 'B-03', patient: null, status: 'Available' },
+    { bed: 'B-04', patient: null, status: 'Available' },
+    { bed: 'B-05', patient: null, status: 'Available' },
+    { bed: 'B-06', patient: null, status: 'Available' },
+    { bed: 'B-07', patient: mockPatients[5], status: 'Stable' },
+    { bed: 'B-08', patient: null, status: 'Available' },
+    { bed: 'B-09', patient: null, status: 'Available' },
+    { bed: 'B-10', patient: null, status: 'Available' },
+    { bed: 'B-11', patient: null, status: 'Available' },
+    { bed: 'B-12', patient: mockPatients[1], status: 'Stable' },
+    { bed: 'C-01', patient: null, status: 'Available' },
+    { bed: 'C-02', patient: null, status: 'Available' },
+    { bed: 'C-03', patient: null, status: 'Available' },
+    { bed: 'C-04', patient: null, status: 'Available' },
+    { bed: 'C-05', patient: null, status: 'Available' },
+    { bed: 'C-06', patient: mockPatients[4], status: 'Critical' },
+    { bed: 'D-01', patient: null, status: 'Available' },
+    { bed: 'D-02', patient: null, status: 'Available' },
+    { bed: 'D-03', patient: mockPatients[2], status: 'Attention' },
+    { bed: 'D-04', patient: null, status: 'Available' }
   ];
-  if (!ward || ward === 'All Wards') return allBeds;
-  return allBeds.filter(b => b.bed.startsWith(ward.split(' ')[0]));
+
+  if (!ward || ward === 'All Wards') {
+    return allBeds;
+  }
+
+  return allBeds.filter((bed) =>
+    bed.bed.startsWith(ward.split(' ')[0])
+  );
 };
