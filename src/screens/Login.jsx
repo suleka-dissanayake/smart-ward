@@ -2,37 +2,36 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const DEMO_ACCOUNTS = [
-  { label: 'Doctor', sub: 'Dr. Ahmed',   email: 'ahmed.alfarouk@smartward.health', password: 'doctor123' },
-  { label: 'Nurse',  sub: 'Nurse Aisha', email: 'aisha.karimi@smartward.health',   password: 'nurse123'  },
-  { label: 'Admin',  sub: 'Ibrahim',     email: 'ibrahim.hassan@smartward.health', password: 'admin123'  },
+  { label: 'Doctor', sub: 'Dr. Ahmed', email: 'ahmed.alfarouk@smartward.health', password: 'doctor123' },
+  { label: 'Nurse', sub: 'Nurse Aisha', email: 'aisha.karimi@smartward.health', password: 'nurse123' },
+  { label: 'Admin', sub: 'Ibrahim', email: 'ibrahim.hassan@smartward.health', password: 'admin123' },
 ];
 
-
 export default function Login() {
-  const { login }               = useAuth();
-  const [email, setEmail]       = useState('');
+  const { login } = useAuth();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError]       = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
       await login(email.trim(), password);
-    } catch (err: unknown) {
+    } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
       setLoading(false);
     }
   };
 
-  const handleQuickLogin = async (acct: typeof DEMO_ACCOUNTS[0]) => {
+  const handleQuickLogin = async (acct) => {
     setLoading(true);
     setError('');
     try {
       await login(acct.email, acct.password);
-    } catch (err: unknown) {
+    } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed — make sure the backend is running and the database is seeded.');
       setLoading(false);
     }
@@ -44,24 +43,33 @@ export default function Login() {
       <div className="hidden lg:flex flex-col justify-between w-[45%] bg-blue-700 p-12 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="absolute rounded-full border border-white/30"
-              style={{ width: 200 + i * 120, height: 200 + i * 120, top: -60 + i * 20, left: -60 + i * 20 }} />
+            <div
+              key={i}
+              className="absolute rounded-full border border-white/30"
+              style={{ width: 200 + i * 120, height: 200 + i * 120, top: -60 + i * 20, left: -60 + i * 20 }}
+            />
           ))}
         </div>
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-12">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2v16M2 10h16" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                <path d="M10 2v16M2 10h16" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
               </svg>
             </div>
             <span className="text-xl font-bold text-white">SmartWard</span>
-          </div><br/><br/>
+          </div>
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-            Digital Ward Round and<br />Patient Ticket Management<br />System
+            Digital Ward
+            <br />
+            Management
+            <br />
+            System
           </h1>
+          <p className="text-blue-200 text-sm mt-6 leading-relaxed">
+            Powered by MongoDB &amp; Express — secure JWT auth, real-time patient records.
+          </p>
         </div>
-
       </div>
 
       {/* Right panel */}
@@ -69,14 +77,17 @@ export default function Login() {
         <div className="w-full max-w-[420px]">
           <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-100">
             <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center lg:hidden" style={{ background: 'linear-gradient(135deg, #1565C0, #00796B)' }}>
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center lg:hidden"
+                style={{ background: 'linear-gradient(135deg, #1565C0, #00796B)' }}
+              >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M10 2v16M2 10h16" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                  <path d="M10 2v16M2 10h16" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">Sign In</h2><br/>
-                <p className="text-sm text-slate-500">Ward Management System</p>
+                <h2 className="text-2xl font-bold text-slate-900">Sign In</h2>
+                <p className="text-sm text-slate-500">Hospital Ward Management System</p>
               </div>
             </div>
 
@@ -86,7 +97,7 @@ export default function Login() {
                 <input
                   type="email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. ahmed.alfarouk@smartward.health"
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 placeholder-slate-400"
                   required
@@ -97,7 +108,7 @@ export default function Login() {
                 <input
                   type="password"
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 placeholder-slate-400"
                   required
@@ -122,7 +133,7 @@ export default function Login() {
             <div className="mt-6 pt-6 border-t border-slate-100">
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Quick Demo Access</p>
               <div className="grid grid-cols-3 gap-2">
-                {DEMO_ACCOUNTS.map(acct => (
+                {DEMO_ACCOUNTS.map((acct) => (
                   <button
                     key={acct.label}
                     onClick={() => handleQuickLogin(acct)}
@@ -135,7 +146,6 @@ export default function Login() {
                 ))}
               </div>
             </div>
-
           </div>
         </div>
       </div>
