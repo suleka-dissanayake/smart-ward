@@ -68,8 +68,9 @@ SmartWard focuses on digitising the **ward-round workflow**: vital signs, medica
 | Layer | Technology |
 |---|---|
 | UI Library | [React 19](https://react.dev) |
-| Language | [TypeScript](https://www.typescriptlang.org) |
+| Language | [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) |
 | Styling | [CSS with Tailwind CSS v4](https://tailwindcss.com) |
+| Database | [MongoDB] (https://www.mongodb.com) |
 | Build Tool | [Vite](https://vitejs.dev) |
 | Package Manager | [pnpm](https://pnpm.io) |
 
@@ -107,7 +108,7 @@ Core TypeScript types link every screen to a shared patient record — an entry 
 - `NursingNote` — time-stamped notes by nursing staff
 - `HistoryEntry` — unified, chronological timeline entry (ward round, vitals, medication, nursing note, admission)
 
-See [`src/types.ts`](./src/types.ts) for the full definitions.
+See [`src/types.js`](./src/types.js) for the full definitions.
 
 ## Getting Started
 
