@@ -70,7 +70,7 @@ SmartWard focuses on digitising the **ward-round workflow**: vital signs, medica
 | UI Library | [React 19](https://react.dev) |
 | Language | [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) |
 | Styling | [CSS with Tailwind CSS v4](https://tailwindcss.com) |
-| Database | [MongoDB] (https://www.mongodb.com) |
+| Database | [MongoDB](https://www.mongodb.com) |
 | Build Tool | [Vite](https://vitejs.dev) |
 | Package Manager | [pnpm](https://pnpm.io) |
 
