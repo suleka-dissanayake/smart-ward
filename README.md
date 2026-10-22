@@ -71,7 +71,7 @@ SmartWard focuses on digitising the **ward-round workflow**: vital signs, medica
 <<<<<<< Updated upstream
 | Language | [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) |
 =======
-| Language | JavaScript (ES modules) — JSX on the frontend, Node.js on the backend |
+| Language | JavaScript (ES modules) — JSX on the frontend, Node.js, express on the backend |
 >>>>>>> Stashed changes
 | Styling | [CSS with Tailwind CSS v4](https://tailwindcss.com) |
 | Database | [MongoDB](https://www.mongodb.com) |
