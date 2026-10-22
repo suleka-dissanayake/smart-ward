@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { body, validationResult } from "express-validator";
 import Patient from "../models/Patient.js";
-
 import { protect, authorize } from "../middleware/auth.js";
 import { createError } from "../middleware/errorHandler.js";
 import { assertBedFree, occupyBed, freeBed } from "../utils/beds.js";
@@ -101,7 +100,7 @@ router.post(
       try {
         await occupyBed(ward, bed, patient._id);
       } catch (err) {
-        await patient.deleteOne(); // don't leave a patient without a bed
+        await patient.deleteOne(); // should not leave a patient without a bed
         throw err;
       }
 
@@ -116,9 +115,9 @@ router.post(
 router.patch("/:id", authorize("admin", "doctor"), async (req, res, next) => {
   try {
     const existing = await Patient.findById(req.params.id);
-    if (!existing) return next(createError("Patient not found", 404));
+    if (!existing) 
+      return next(createError("Patient not found", 404));
 
-    // Whitelist: vitals, medications, rounds and notes have their own endpoints.
     const allowed = [
       "name",
       "age",
@@ -144,11 +143,10 @@ router.patch("/:id", authorize("admin", "doctor"), async (req, res, next) => {
     const moving = newWard !== String(existing.ward) || newBed !== existing.bed;
 
     if (discharging) {
-      // A discharged patient releases their bed; keep the old location as history.
       delete updates.ward;
       delete updates.bed;
     } else if (wasDischarged && !reactivating) {
-      delete updates.ward; // can't move a discharged patient without readmitting them
+      delete updates.ward;
       delete updates.bed;
     } else if (moving || reactivating) {
       await assertBedFree(newWard, newBed, existing._id);
