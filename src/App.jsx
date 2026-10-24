@@ -29,11 +29,11 @@ function AppShell() {
   const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [history, setHistory] = useState([]);
   const [notifCount, setNotifCount] = useState(0);
-  const [inSession, setInSession] = useState(false); // true while the doctor is walking a guided ward round
+  const [inSession, setInSession] = useState(false);
 
-  // Real unread count for the sidebar badge (admins have no notifications screen).
   useEffect(() => {
-    if (!user || user.role === 'admin') return;
+    if (!user || user.role === 'admin') 
+      return;
     notificationsApi
       .list()
       .then((res) => setNotifCount(res.data.filter((n) => !n.isRead).length))
