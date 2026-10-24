@@ -17,9 +17,8 @@ const WardSchema = new Schema(
 );
 
 WardSchema.virtual("occupiedBeds").get(function () {
-  // `beds` is undefined when a query only selected some fields,
-  // e.g. Patient.populate("ward", "name") — don't crash JSON serialisation.
-  if (!this.beds) return undefined;
+  if (!this.beds) 
+    return undefined;
   return this.beds.filter((b) => b.isOccupied).length;
 });
 
