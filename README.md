@@ -68,13 +68,8 @@ SmartWard focuses on digitising the **ward-round workflow**: vital signs, medica
 | Layer | Technology |
 |---|---|
 | UI Library | [React 19](https://react.dev) |
-<<<<<<< Updated upstream
-| Language | [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) |
-=======
-| Language | JavaScript (ES modules) — JSX on the frontend, Node.js, express on the backend |
->>>>>>> Stashed changes
+| Language | JavaScript (ES modules) — JSX on the frontend, Node.js on the backend |
 | Styling | [CSS with Tailwind CSS v4](https://tailwindcss.com) |
-| Database | [MongoDB](https://www.mongodb.com) |
 | Build Tool | [Vite](https://vitejs.dev) |
 | Package Manager | [pnpm](https://pnpm.io) |
 
@@ -112,11 +107,7 @@ The Mongoose schemas in `backend/src/models` define one shared patient record th
 - `NursingNote` — time-stamped notes by nursing staff
 - `HistoryEntry` — unified, chronological timeline entry (ward round, vitals, medication, nursing note, admission)
 
-<<<<<<< Updated upstream
-See [`src/types.js`](./src/types.js) for the full definitions.
-=======
 See [`backend/src/models/Patient.js`](./backend/src/models/Patient.js) for the full definitions.
->>>>>>> Stashed changes
 
 ## Getting Started
 

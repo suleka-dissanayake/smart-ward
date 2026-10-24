@@ -3,6 +3,8 @@ import { seedDatabase } from "../config/seedData.js";
 
 const router = Router();
 
+// POST /api/seed — wipes the DB and inserts demo data.
+// This endpoint is unauthenticated and destructive, so it is disabled in production.
 router.post("/", async (_req, res) => {
   if (process.env.NODE_ENV === "production") {
     res.status(403).json({ success: false, message: "Seeding is disabled in production" });
