@@ -5,7 +5,7 @@ import { activePatients, bySeverity, hadRoundToday, latestVitals, wardNameOf } f
 import StatusBadge from '../components/StatusBadge';
 import { Spinner, ErrorState } from '../components/LoadingState';
 
-/**
+/*
  * A guided ward round: the doctor's assigned patients in priority order
  * (critical first), with progress for today and a one-tap "next patient".
  */
@@ -22,8 +22,10 @@ export default function WardRoundSession({ user, onNavigate }) {
       .finally(() => setLoading(false));
   }, [user.id]);
 
-  if (loading) return <Spinner label="Preparing ward round..." />;
-  if (error) return <ErrorState message={error} onBack={() => onNavigate('doctor-dashboard')} />;
+  if (loading) 
+    return <Spinner label="Preparing ward round..." />;
+  if (error) 
+    return <ErrorState message={error} onBack={() => onNavigate('doctor-dashboard')} />;
 
   const pending = patients.filter((p) => !hadRoundToday(p));
   const done = patients.length - pending.length;

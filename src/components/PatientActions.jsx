@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { patientsApi } from '../services/api';
 import ConfirmDialog from './ConfirmDialog';
 
-/** Permanently deletes a patient record (admin, doctor and nurse may do this). */
+/* Permanently deletes a patient record (admin, doctor and nurse may do this). */
 export function RemovePatientDialog({ patient, onDone, onClose }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -40,7 +40,7 @@ export function RemovePatientDialog({ patient, onDone, onClose }) {
   );
 }
 
-/** Marks a patient as discharged: the history is kept and the bed is freed. */
+/* Marks a patient as discharged: the history is kept and the bed is freed. */
 export function DischargeDialog({ patient, onDone, onClose }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
