@@ -70,7 +70,6 @@ SmartWard focuses on digitising the **ward-round workflow**: vital signs, medica
 | UI Library | [React 19](https://react.dev) |
 | Language | JavaScript (ES modules) — JSX on the frontend, Node.js on the backend |
 | Styling | [CSS with Tailwind CSS v4](https://tailwindcss.com) |
-| Database | [MongoDB Community](https://www.mongodb.com/) |
 | Build Tool | [Vite](https://vitejs.dev) |
 | Package Manager | [pnpm](https://pnpm.io) |
 
@@ -189,3 +188,6 @@ Miss. A. Ann Sinthusa — Faculty of Applied Science — University of Vavuniya
 ## License
 
 This project was developed for academic purposes as part of IT 3162 at University of Vavuniya.
+
+## Database design
+The collections, relationships and role rules follow the project's ER diagram — see [`docs/DATABASE.md`](./docs/DATABASE.md).
