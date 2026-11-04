@@ -19,8 +19,7 @@ async function request(path, options = {}) {
   });
 
   const data = await res.json();
-  if (!res.ok) 
-    throw new Error(data.message ?? 'Request failed');
+  if (!res.ok) throw new Error(data.message ?? 'Request failed');
   return data;
 }
 
@@ -51,6 +50,7 @@ export const patientsApi = {
   update: (id, body) => patch(`/patients/${id}`, body),
   remove: (id) => del(`/patients/${id}`),
   addVitals: (id, body) => post(`/patients/${id}/vitals`, body),
+  diagnoseVitals: (id, vitalId, diagnosis) => patch(`/patients/${id}/vitals/${vitalId}/diagnosis`, { diagnosis }),
   addMedication: (id, body) => post(`/patients/${id}/medications`, body),
   removeMedication: (id, medId) => del(`/patients/${id}/medications/${medId}`),
   administerDose: (id, medId, doseIdx) => patch(`/patients/${id}/medications/${medId}/doses/${doseIdx}`, {}),
