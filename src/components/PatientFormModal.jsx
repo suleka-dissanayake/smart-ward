@@ -46,14 +46,16 @@ export default function PatientFormModal({ patient, onSaved, onClose }) {
         setDoctors(d.data);
         setNurses(n.data);
         if (!editing) {
-          // Pre-select the first ward that actually has a free bed, and the current user's role.
-          const ward = w.data.find((x) => x.beds.some((b) => !b.isOccupied)) ?? w.data[0];
+          // Pre-select the logged-in clinician's own ward if it has a free bed, else the first ward that does.
+          const hasFree = (x) => x.beds.some((b) => !b.isOccupied);
+          const myWardId = idOf([...d.data, ...n.data].find((x) => x._id === user?.id)?.ward);
+          const ward = w.data.find((x) => x._id === myWardId && hasFree(x)) ?? w.data.find(hasFree) ?? w.data[0];
           setForm((f) => ({
             ...f,
             ward: ward?._id ?? '',
             bed: ward?.beds.find((b) => !b.isOccupied)?.bedNumber ?? '',
-            assignedDoctor: user?.role === 'doctor' && d.data.some((x) => x._id === user.id) ? user.id : (d.data[0]?._id ?? ''),
-            assignedNurse: user?.role === 'nurse' && n.data.some((x) => x._id === user.id) ? user.id : (n.data[0]?._id ?? ''),
+            assignedDoctor: pickStaff(d.data, ward?._id, user?.role === 'doctor' ? user.id : undefined),
+            assignedNurse: pickStaff(n.data, ward?._id, user?.role === 'nurse' ? user.id : undefined),
           }));
         }
       })
@@ -62,8 +64,24 @@ export default function PatientFormModal({ patient, onSaved, onClose }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Staff assigned to a ward are offered first; if the ward has none yet, everyone is offered.
+  const inWard = (list, wardId) => {
+    const here = list.filter((u) => idOf(u.ward) === wardId);
+    return here.length ? here : list;
+  };
+  const pickStaff = (list, wardId, preferredId) => {
+    const options = inWard(list, wardId);
+    return (options.find((u) => u._id === preferredId) ?? options[0])?._id ?? '';
+  };
+
   const changeWard = (wardId) => {
-    setForm((f) => ({ ...f, ward: wardId, bed: freeBeds(wardId)[0]?.bedNumber ?? '' }));
+    setForm((f) => ({
+      ...f,
+      ward: wardId,
+      bed: freeBeds(wardId)[0]?.bedNumber ?? '',
+      assignedDoctor: pickStaff(doctors, wardId, f.assignedDoctor),
+      assignedNurse: pickStaff(nurses, wardId, f.assignedNurse),
+    }));
   };
 
   const locationLocked = editing && patient.status === 'Discharged' && form.status === 'Discharged';
@@ -240,7 +258,7 @@ export default function PatientFormModal({ patient, onSaved, onClose }) {
               <div>
                 <label className={labelCls}>Assigned doctor *</label>
                 <select required value={form.assignedDoctor} onChange={(e) => set('assignedDoctor', e.target.value)} className={inputCls}>
-                  {withCurrent(doctors, patient?.assignedDoctor).map((d) => (
+                  {withCurrent(inWard(doctors, form.ward), patient?.assignedDoctor).map((d) => (
                     <option key={d._id} value={d._id}>
                       {d.name}
                     </option>
@@ -250,7 +268,7 @@ export default function PatientFormModal({ patient, onSaved, onClose }) {
               <div>
                 <label className={labelCls}>Assigned nurse *</label>
                 <select required value={form.assignedNurse} onChange={(e) => set('assignedNurse', e.target.value)} className={inputCls}>
-                  {withCurrent(nurses, patient?.assignedNurse).map((n) => (
+                  {withCurrent(inWard(nurses, form.ward), patient?.assignedNurse).map((n) => (
                     <option key={n._id} value={n._id}>
                       {n.name}
                     </option>
