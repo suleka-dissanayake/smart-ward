@@ -68,7 +68,7 @@ SmartWard focuses on digitising the **ward-round workflow**: vital signs, medica
 | Layer | Technology |
 |---|---|
 | UI Library | [React 19](https://react.dev) |
-| Language | [TypeScript](https://www.typescriptlang.org) |
+| Language | JavaScript (ES modules) — JSX on the frontend, Node.js on the backend |
 | Styling | [CSS with Tailwind CSS v4](https://tailwindcss.com) |
 | Build Tool | [Vite](https://vitejs.dev) |
 | Package Manager | [pnpm](https://pnpm.io) |
@@ -98,7 +98,7 @@ The app was prototyped screen-by-screen for all three roles, then built as reusa
 
 ## Data Model
 
-Core TypeScript types link every screen to a shared patient record — an entry a doctor makes during a ward round appears instantly in **Patient History**.
+The Mongoose schemas in `backend/src/models` define one shared patient record that links every screen — an entry a doctor makes during a ward round appears instantly in **Patient History**.
 
 - `Patient` — demographics, status (`Stable` / `Attention` / `Critical` / `Discharged`), assigned staff
 - `VitalSigns` — temperature, blood pressure, pulse, respiratory rate, SpO₂, pain score
@@ -107,7 +107,7 @@ Core TypeScript types link every screen to a shared patient record — an entry 
 - `NursingNote` — time-stamped notes by nursing staff
 - `HistoryEntry` — unified, chronological timeline entry (ward round, vitals, medication, nursing note, admission)
 
-See [`src/types.ts`](./src/types.ts) for the full definitions.
+See [`backend/src/models/Patient.js`](./backend/src/models/Patient.js) for the full definitions.
 
 ## Getting Started
 
@@ -146,17 +146,20 @@ The app will be available at `http://localhost:5173` (default Vite port).
 ```
 smartward/
 ├── src/
-│   ├── components/     # Reusable UI components (Sidebar, StatusBadge, ...)
-│   ├── data/           # Mock data used during development
+│   ├── components/     # Reusable UI (Sidebar, Modal, PatientFormModal, ...)
+│   ├── context/        # AuthContext (login state)
+│   ├── hooks/          # usePatient
 │   ├── screens/        # One file per app screen (Login, WardRound, ...)
-│   ├── App.tsx          # Root component & navigation
-│   ├── types.ts        # Shared TypeScript types & data model
+│   ├── services/       # api.js — REST client for the backend
+│   ├── utils/          # Shared helpers (history timeline, formatting)
+│   ├── App.jsx         # Root component & navigation
 │   ├── index.css       # Global styles / Tailwind entry
-│   └── main.tsx        # App entry point
+│   └── main.jsx        # App entry point
+├── backend/            # Express + MongoDB API (see backend/src)
 ├── index.html
 ├── package.json
-├── tsconfig.json
-└── vite.config.ts
+├── jsconfig.json
+└── vite.config.js
 ```
 
 ## Roadmap
@@ -185,3 +188,6 @@ Miss. A. Ann Sinthusa — Faculty of Applied Science — University of Vavuniya
 ## License
 
 This project was developed for academic purposes as part of IT 3162 at University of Vavuniya.
+
+## Database design
+The collections, relationships and role rules follow the project's ER diagram — see [`docs/DATABASE.md`](./docs/DATABASE.md).

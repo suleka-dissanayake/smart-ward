@@ -1,3 +1,4 @@
+// Shared seeding logic — used by both `npm run seed` (CLI) and POST /api/seed (HTTP).
 import User from "../models/User.js";
 import Ward from "../models/Ward.js";
 import Patient from "../models/Patient.js";

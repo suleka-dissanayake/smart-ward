@@ -1,3 +1,5 @@
+// For this only, we use typescript for strict variable declaration
+
 export type UserRole = 'doctor' | 'nurse' | 'admin';
 
 export type Screen =
