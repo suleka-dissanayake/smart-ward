@@ -17,8 +17,8 @@ const WardSchema = new Schema(
 );
 
 WardSchema.virtual("occupiedBeds").get(function () {
- 
-  if (!this.beds) return undefined;
+  if (!this.beds) 
+    return undefined;
   return this.beds.filter((b) => b.isOccupied).length;
 });
 

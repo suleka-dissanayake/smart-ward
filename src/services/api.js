@@ -50,6 +50,7 @@ export const patientsApi = {
   update: (id, body) => patch(`/patients/${id}`, body),
   remove: (id) => del(`/patients/${id}`),
   addVitals: (id, body) => post(`/patients/${id}/vitals`, body),
+  diagnoseVitals: (id, vitalId, diagnosis) => patch(`/patients/${id}/vitals/${vitalId}/diagnosis`, { diagnosis }),
   addMedication: (id, body) => post(`/patients/${id}/medications`, body),
   removeMedication: (id, medId) => del(`/patients/${id}/medications/${medId}`),
   administerDose: (id, medId, doseIdx) => patch(`/patients/${id}/medications/${medId}/doses/${doseIdx}`, {}),

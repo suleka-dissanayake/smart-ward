@@ -26,3 +26,13 @@ reports (occupancy, condition mix, 7-day activity, staff workload, CSV export, p
 - A doctor/nurse who still has patients can't be deleted (reassign first); you can't delete or deactivate yourself;
   the last administrator can't be removed.
 - "Discharge" keeps the history and frees the bed; "Remove" permanently deletes the record (with a confirmation).
+
+## Note: JavaScript version
+This copy is plain JavaScript (`.js` / `.jsx`), converted from the original TypeScript. There is no type-checking or build
+step for the backend: `npm run dev` (nodemon) and `npm run start` run `node src/index.js` directly, and the backend uses
+native ES modules (`"type": "module"`, so relative imports end in `.js`).
+
+## Database design (ER diagram)
+Beds are their own collection; doctors and nurses belong to a ward and are managed by an admin; only nurses record vitals
+and write nursing notes; only doctors diagnose vital signs. Full mapping: `docs/DATABASE.md`.
+After pulling this version, re-run `npm run seed` in `backend` (the beds moved to a new collection).
