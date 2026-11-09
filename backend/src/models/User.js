@@ -7,7 +7,18 @@ const UserSchema = new Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true, minlength: 6 },
     role: { type: String, enum: ["doctor", "nurse", "admin"], required: true },
-    department: { type: String, required: true, trim: true },
+    // Admins have no department (ER: Admin = id, name, email); doctors and nurses do.
+    department: {
+      type: String,
+      trim: true,
+      required: function () {
+        return this.role !== "admin";
+      },
+    },
+    // ER: Ward 1 —has— M Doctor / M Nurse
+    ward: { type: Schema.Types.ObjectId, ref: "Ward" },
+    // ER: Admin 1 —manages— M Doctor / M Nurse
+    managedBy: { type: Schema.Types.ObjectId, ref: "User" },
     status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
   },
   { timestamps: true }
