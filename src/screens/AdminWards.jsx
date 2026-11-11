@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-import { wardsApi, patientsApi } from '../services/api';
+import { wardsApi, patientsApi, usersApi } from '../services/api';
 import { shortId, wardNameOf } from '../utils/patient';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -15,6 +15,7 @@ const btnCancel = 'flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm 
 export default function AdminWards({ onNavigate }) {
   const [wards, setWards] = useState([]);
   const [patients, setPatients] = useState([]);
+  const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [selectedId, setSelectedId] = useState('');
@@ -35,8 +36,9 @@ export default function AdminWards({ onNavigate }) {
   };
 
   const load = () =>
-    Promise.all([wardsApi.list(), patientsApi.list()])
-      .then(([w, p]) => {
+    Promise.all([wardsApi.list(), patientsApi.list(), usersApi.list()])
+      .then(([w, p, u]) => {
+        setStaff(u.data);
         setWards(w.data);
         setPatients(p.data);
         setSelectedId((cur) => (w.data.some((x) => x._id === cur) ? cur : (w.data[0]?._id ?? '')));
@@ -50,6 +52,12 @@ export default function AdminWards({ onNavigate }) {
   }, []);
 
   const selected = wards.find((w) => w._id === selectedId);
+  // ER: Ward has Doctor / Nurse
+  const staffNames = (role) =>
+    staff
+      .filter((u) => u.role === role && (u.ward?._id ?? u.ward) === selected?._id)
+      .map((u) => u.name)
+      .join(', ') || 'none assigned';
   const patientById = new Map(patients.map((p) => [p._id, p]));
 
   const open = (d) => {
@@ -206,6 +214,17 @@ export default function AdminWards({ onNavigate }) {
                 Delete Ward
               </button>
             </div>
+          </div>
+          <div className="px-5 py-3 border-b border-slate-100 text-xs text-slate-600 flex flex-wrap gap-x-6 gap-y-1">
+            <span>
+              <strong className="text-slate-700">Managed by:</strong> {selected.managedBy?.name ?? '—'}
+            </span>
+            <span>
+              <strong className="text-slate-700">Doctors:</strong> {staffNames('doctor')}
+            </span>
+            <span>
+              <strong className="text-slate-700">Nurses:</strong> {staffNames('nurse')}
+            </span>
           </div>
           <div className="p-5 overflow-x-auto">
             <table className="w-full text-sm">
@@ -399,7 +418,7 @@ export default function AdminWards({ onNavigate }) {
                 and can't be deleted. Transfer or discharge those patients first.
               </>
             ) : (
-              'The ward and all of its beds will be permanently deleted.'
+              'The ward and all of its beds will be permanently deleted. Doctors and nurses assigned to it become unassigned.'
             )
           }
           confirmLabel="Delete ward"
