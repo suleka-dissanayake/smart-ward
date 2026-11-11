@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usersApi } from '../services/api';
+import { usersApi, wardsApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -11,7 +11,7 @@ const roleColors = {
   admin: 'bg-purple-50 text-purple-700',
 };
 
-const EMPTY_FORM = { name: '', email: '', password: '', role: 'doctor', department: '', status: 'Active' };
+const EMPTY_FORM = { name: '', email: '', password: '', role: 'doctor', department: '', ward: '', status: 'Active' };
 
 const inputCls = 'w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
 const labelCls = 'block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide';
@@ -51,14 +51,24 @@ export default function AdminUsers() {
       .catch((err) => setLoadError(err instanceof Error ? err.message : 'Failed to load users'))
       .finally(() => setLoading(false));
 
+  const [wards, setWards] = useState([]);
+
   useEffect(() => {
     void load();
+    wardsApi
+      .list()
+      .then((res) => setWards(res.data))
+      .catch(() => {});
   }, []);
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();
     return (
-      (!q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.department.toLowerCase().includes(q)) &&
+      (!q ||
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.department ?? '').toLowerCase().includes(q) ||
+        (u.ward?.name ?? '').toLowerCase().includes(q)) &&
       (roleFilter === 'All' || u.role === roleFilter.toLowerCase())
     );
   });
@@ -71,7 +81,15 @@ export default function AdminUsers() {
   };
   const openEdit = (u) => {
     setEditing(u);
-    setForm({ name: u.name, email: u.email, password: '', role: u.role, department: u.department, status: u.status });
+    setForm({
+      name: u.name,
+      email: u.email,
+      password: '',
+      role: u.role,
+      department: u.department ?? '',
+      ward: u.ward?._id ?? '',
+      status: u.status,
+    });
     setFormError('');
     setShowForm(true);
   };
@@ -82,11 +100,13 @@ export default function AdminUsers() {
     setFormError('');
     try {
       if (editing) {
-        const { name, email, role, department, status } = form;
-        await usersApi.update(editing._id, { name, email, role, department, status });
+        const { name, email, role, department, ward, status } = form;
+        // Admins have no department or ward (ER: Admin = id, name, email).
+        await usersApi.update(editing._id, { name, email, role, status, ...(role === 'admin' ? {} : { department, ward }) });
         showToast(`${name} updated.`);
       } else {
-        await usersApi.create(form);
+        const { department, ward, ...base } = form;
+        await usersApi.create(form.role === 'admin' ? base : { ...base, department, ward: ward || undefined });
         showToast(`${form.name} added as ${form.role}.`);
       }
       setShowForm(false);
@@ -191,7 +211,7 @@ export default function AdminUsers() {
           <span>Name</span>
           <span>Email</span>
           <span>Role</span>
-          <span>Department</span>
+          <span>Department · Ward</span>
           <span>Status</span>
           <span></span>
         </div>
@@ -207,7 +227,9 @@ export default function AdminUsers() {
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold w-fit ${roleColors[u.role]}`}>
                 {u.role.charAt(0).toUpperCase() + u.role.slice(1)}
               </span>
-              <div className="text-xs text-slate-500 truncate">{u.department}</div>
+              <div className="text-xs text-slate-500 truncate">
+                {u.role === 'admin' ? '—' : `${u.department}${u.ward?.name ? ` · ${u.ward.name}` : ''}`}
+              </div>
               <StatusBadge status={u.status} />
               <div className="flex gap-1.5 justify-end">
                 <button
@@ -305,17 +327,33 @@ export default function AdminUsers() {
                     <option value="admin">Admin</option>
                   </select>
                 </div>
-                <div>
-                  <label className={labelCls}>Department</label>
-                  <input
-                    required
-                    value={form.department}
-                    onChange={(e) => setForm((f) => ({ ...f, department: e.target.value }))}
-                    className={inputCls}
-                    placeholder="e.g. Medical Ward A"
-                  />
-                </div>
+                {form.role !== 'admin' && (
+                  <div>
+                    <label className={labelCls}>Department</label>
+                    <input
+                      required
+                      value={form.department}
+                      onChange={(e) => setForm((f) => ({ ...f, department: e.target.value }))}
+                      className={inputCls}
+                      placeholder="e.g. Internal Medicine"
+                    />
+                  </div>
+                )}
               </div>
+              {form.role !== 'admin' && (
+                <div>
+                  <label className={labelCls}>Ward</label>
+                  <select value={form.ward} onChange={(e) => setForm((f) => ({ ...f, ward: e.target.value }))} className={inputCls}>
+                    <option value="">Not assigned to a ward</option>
+                    {wards.map((w) => (
+                      <option key={w._id} value={w._id}>
+                        {w.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {editing?.managedBy?.name && <p className="text-xs text-slate-400">Managed by {editing.managedBy.name}</p>}
               {editing && !isMe(editing) && (
                 <div>
                   <label className={labelCls}>Status</label>
