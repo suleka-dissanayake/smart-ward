@@ -224,7 +224,7 @@ export default function Reports() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              {['Name', 'Role', 'Department', 'Status', 'Patients'].map((h) => (
+              {['Name', 'Role', 'Department', 'Ward', 'Managed by', 'Status', 'Patients'].map((h) => (
                 <th key={h} className="text-left px-5 py-2.5">
                   {h}
                 </th>
@@ -237,6 +237,8 @@ export default function Reports() {
                 <td className="px-5 py-2.5 font-medium text-slate-700">{user.name}</td>
                 <td className="px-5 py-2.5 text-slate-600 capitalize">{user.role}</td>
                 <td className="px-5 py-2.5 text-slate-600">{user.department}</td>
+                <td className="px-5 py-2.5 text-slate-600">{user.ward?.name ?? '—'}</td>
+                <td className="px-5 py-2.5 text-slate-600">{user.managedBy?.name ?? '—'}</td>
                 <td className="px-5 py-2.5 text-slate-600">{user.status}</td>
                 <td className="px-5 py-2.5 font-semibold text-slate-800">{load}</td>
               </tr>
