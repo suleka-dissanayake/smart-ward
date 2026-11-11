@@ -1,12 +1,25 @@
 import { Router } from "express";
 import { body, validationResult } from "express-validator";
 import Patient from "../models/Patient.js";
+import User from "../models/User.js";
 
 import { protect, authorize } from "../middleware/auth.js";
 import { createError } from "../middleware/errorHandler.js";
 import { assertBedFree, occupyBed, freeBed } from "../utils/beds.js";
 
 const router = Router();
+
+/** ER: Doctor treats Patient, Nurse is assigned to Patient — make sure the ids really are those roles. */
+async function assertStaffRoles({ assignedDoctor, assignedNurse }) {
+  if (assignedDoctor !== undefined) {
+    const d = await User.findById(assignedDoctor).select("role");
+    if (!d || d.role !== "doctor") throw createError("Assigned doctor must be a user with the doctor role", 400);
+  }
+  if (assignedNurse !== undefined) {
+    const n = await User.findById(assignedNurse).select("role");
+    if (!n || n.role !== "nurse") throw createError("Assigned nurse must be a user with the nurse role", 400);
+  }
+}
 router.use(protect);
 
 router.get("/", async (req, res, next) => {
@@ -37,6 +50,7 @@ router.get("/:id", async (req, res, next) => {
       .populate("assignedDoctor", "name department")
       .populate("assignedNurse", "name department")
       .populate("vitals.recordedBy", "name")
+      .populate("vitals.diagnosedBy", "name")
       .populate("medications.prescribedBy", "name")
       .populate("wardRounds.doctor", "name")
       .populate("nursingNotes.nurse", "name");
@@ -80,6 +94,8 @@ router.post(
         assignedDoctor,
         assignedNurse,
       } = req.body;
+
+      await assertStaffRoles({ assignedDoctor, assignedNurse });
 
       // Refuse to double-book a bed (or use a bed that doesn't exist).
       await assertBedFree(ward, bed);
@@ -134,6 +150,8 @@ router.patch("/:id", authorize("admin", "doctor"), async (req, res, next) => {
     ];
     const updates = {};
     for (const k of allowed) if (req.body[k] !== undefined) updates[k] = req.body[k];
+
+    await assertStaffRoles({ assignedDoctor: updates.assignedDoctor, assignedNurse: updates.assignedNurse });
 
     const wasDischarged = existing.status === "Discharged";
     const discharging = updates.status === "Discharged" && !wasDischarged;
@@ -191,7 +209,7 @@ router.delete("/:id", authorize("admin", "doctor", "nurse"), async (req, res, ne
 // POST /api/patients/:id/vitals
 router.post(
   "/:id/vitals",
-  authorize("doctor", "nurse"),
+  authorize("nurse"), // ER: Nurse records vital signs
   [
     body("temperature").notEmpty(),
     body("bloodPressure").notEmpty(),
@@ -213,6 +231,32 @@ router.post(
       );
       if (!patient) return next(createError("Patient not found", 404));
       res.status(201).json({ success: true, data: patient.vitals[0] });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// PATCH /api/patients/:id/vitals/:vitalId/diagnosis — ER: Doctor diagnoses a vital-signs record
+router.patch(
+  "/:id/vitals/:vitalId/diagnosis",
+  authorize("doctor"),
+  [body("diagnosis").notEmpty().trim()],
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return next(createError("A diagnosis is required", 400));
+
+    try {
+      const patient = await Patient.findById(req.params.id);
+      if (!patient) return next(createError("Patient not found", 404));
+      const vital = patient.vitals.find((v) => String(v._id) === req.params.vitalId);
+      if (!vital) return next(createError("Vital signs record not found", 404));
+
+      vital.diagnosis = req.body.diagnosis;
+      vital.diagnosedBy = req.user._id;
+      vital.diagnosedAt = new Date();
+      await patient.save();
+      res.json({ success: true, data: vital });
     } catch (err) {
       next(err);
     }
@@ -350,22 +394,27 @@ router.post(
 // --- Nursing Notes ---
 
 // POST /api/patients/:id/nursing-notes
-router.post("/:id/nursing-notes", authorize("nurse", "doctor"), [body("note").notEmpty()], async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) return next(createError("Invalid input", 400));
+router.post(
+  "/:id/nursing-notes",
+  authorize("nurse"), // ER: Nurse writes nursing notes
+  [body("note").notEmpty()],
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return next(createError("Invalid input", 400));
 
-  try {
-    const entry = { note: req.body.note, nurse: req.user._id, date: new Date() };
-    const patient = await Patient.findByIdAndUpdate(
-      req.params.id,
-      { $push: { nursingNotes: { $each: [entry], $position: 0 } } },
-      { new: true }
-    );
-    if (!patient) return next(createError("Patient not found", 404));
-    res.status(201).json({ success: true, data: patient.nursingNotes[0] });
-  } catch (err) {
-    next(err);
+    try {
+      const entry = { note: req.body.note, nurse: req.user._id, date: new Date() };
+      const patient = await Patient.findByIdAndUpdate(
+        req.params.id,
+        { $push: { nursingNotes: { $each: [entry], $position: 0 } } },
+        { new: true }
+      );
+      if (!patient) return next(createError("Patient not found", 404));
+      res.status(201).json({ success: true, data: patient.nursingNotes[0] });
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 export default router;
