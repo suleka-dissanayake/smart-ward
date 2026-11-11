@@ -1,7 +1,18 @@
 import { useState } from 'react';
 
 import { usePatient } from '../hooks/usePatient';
-import { buildHistory, fmtDate, fmtDateTime, latestVitals, latestWardRound, nameOf, shortId, wardNameOf } from '../utils/patient';
+import { patientsApi } from '../services/api';
+import {
+  sortedVitals,
+  buildHistory,
+  fmtDate,
+  fmtDateTime,
+  latestVitals,
+  latestWardRound,
+  nameOf,
+  shortId,
+  wardNameOf,
+} from '../utils/patient';
 import StatusBadge from '../components/StatusBadge';
 import PatientFormModal from '../components/PatientFormModal';
 import { RemovePatientDialog, DischargeDialog } from '../components/PatientActions';
@@ -14,6 +25,25 @@ export default function PatientProfile({ patientId, role, onNavigate, onBack }) 
   const [showDischarge, setShowDischarge] = useState(false);
   const [showRemove, setShowRemove] = useState(false);
   const [notice, setNotice] = useState('');
+  // ER: Doctor diagnoses Vital signs
+  const [diagFor, setDiagFor] = useState(null);
+  const [diagText, setDiagText] = useState('');
+  const [diagBusy, setDiagBusy] = useState(false);
+  const [diagError, setDiagError] = useState('');
+
+  const saveDiagnosis = async (vitalId) => {
+    setDiagBusy(true);
+    setDiagError('');
+    try {
+      await patientsApi.diagnoseVitals(patientId, vitalId, diagText.trim());
+      setDiagFor(null);
+      await reload();
+    } catch (err) {
+      setDiagError(err instanceof Error ? err.message : 'Failed to save diagnosis');
+    } finally {
+      setDiagBusy(false);
+    }
+  };
   const canManage = role === 'admin' || role === 'doctor'; // edit + discharge; everyone may remove
 
   const done = (message) => {
@@ -28,6 +58,7 @@ export default function PatientProfile({ patientId, role, onNavigate, onBack }) 
   if (error || !p) return <ErrorState message={error || 'Patient not found'} onBack={onBack} />;
 
   const v = latestVitals(p);
+  const allVitals = sortedVitals(p);
   const lastRound = latestWardRound(p);
   const history = buildHistory(p);
   const dash = '—';
@@ -87,7 +118,7 @@ export default function PatientProfile({ patientId, role, onNavigate, onBack }) 
           <div className="flex flex-col items-end gap-2">
             <StatusBadge status={p.status} size="md" />
             <div className="flex gap-2">
-              {(role === 'doctor' || role === 'nurse') && (
+              {role === 'nurse' && (
                 <button
                   onClick={() => onNavigate('record-vitals', p._id)}
                   className="px-3 py-1.5 text-xs font-semibold bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
@@ -213,7 +244,7 @@ export default function PatientProfile({ patientId, role, onNavigate, onBack }) 
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
           <div className="flex items-center justify-between mb-5">
             <h3 className="text-sm font-bold text-slate-900">Vital Signs Record</h3>
-            {(role === 'nurse' || role === 'doctor') && (
+            {role === 'nurse' && (
               <button
                 onClick={() => onNavigate('record-vitals', p._id)}
                 className="px-4 py-2 text-xs font-semibold bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
@@ -240,6 +271,79 @@ export default function PatientProfile({ patientId, role, onNavigate, onBack }) 
           <p className="text-xs text-slate-400 text-center">
             {v ? `Last recorded ${fmtDateTime(v.recordedAt)} by ${nameOf(v.recordedBy)}` : 'No vital signs recorded yet'}
           </p>
+
+          {allVitals.length > 0 && (
+            <div className="mt-6">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-3">Vital signs history</h4>
+              <div className="space-y-3">
+                {allVitals.map((rec) => (
+                  <div key={rec._id} className="border border-slate-100 rounded-xl p-4">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="text-xs text-slate-500">
+                        {fmtDateTime(rec.recordedAt)} · recorded by {nameOf(rec.recordedBy)}
+                      </div>
+                      <div className="text-xs font-mono text-slate-700">
+                        BP {rec.bloodPressure} · Temp {rec.temperature} · Pulse {rec.pulse} · Resp {rec.respiratoryRate} · SpO2 {rec.spo2}
+                      </div>
+                    </div>
+
+                    {rec.diagnosis && diagFor !== rec._id && (
+                      <div className="mt-3 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                        <div className="text-[11px] font-semibold text-red-700">
+                          Diagnosis · {nameOf(rec.diagnosedBy)} · {fmtDateTime(rec.diagnosedAt)}
+                        </div>
+                        <div className="text-sm text-slate-800 mt-0.5">{rec.diagnosis}</div>
+                      </div>
+                    )}
+
+                    {role === 'doctor' && diagFor !== rec._id && (
+                      <button
+                        onClick={() => {
+                          setDiagFor(rec._id);
+                          setDiagText(rec.diagnosis ?? '');
+                          setDiagError('');
+                        }}
+                        className="mt-3 text-xs font-semibold text-blue-600 hover:underline"
+                      >
+                        {rec.diagnosis ? 'Edit diagnosis' : '+ Add diagnosis'}
+                      </button>
+                    )}
+
+                    {diagFor === rec._id && (
+                      <div className="mt-3 space-y-2">
+                        {diagError && (
+                          <div className="bg-red-50 text-red-700 text-xs px-3 py-2 rounded-lg border border-red-200">✗ {diagError}</div>
+                        )}
+                        <textarea
+                          value={diagText}
+                          onChange={(e) => setDiagText(e.target.value)}
+                          rows={3}
+                          placeholder="Diagnosis based on these vital signs..."
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setDiagFor(null)}
+                            disabled={diagBusy}
+                            className="px-3 py-1.5 text-xs font-semibold border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => saveDiagnosis(rec._id)}
+                            disabled={diagBusy || !diagText.trim()}
+                            className="px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60"
+                          >
+                            {diagBusy ? 'Saving...' : 'Save diagnosis'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

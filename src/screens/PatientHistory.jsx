@@ -28,6 +28,7 @@ const typeConfig = {
     text: 'text-orange-700',
     icon: '📝',
   },
+  diagnosis: { label: 'Diagnosis', color: 'bg-red-500', bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', icon: '🔎' },
   admission: {
     label: 'Admission',
     color: 'bg-slate-500',
