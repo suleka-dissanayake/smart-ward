@@ -8,7 +8,11 @@ const VitalsSchema = new Schema({
   spo2: { type: String, required: true },
   painScore: { type: Number, required: true, min: 0, max: 10 },
   recordedAt: { type: Date, default: Date.now },
-  recordedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  recordedBy: { type: Schema.Types.ObjectId, ref: "User", required: true }, // ER: Nurse records vital signs
+  // ER: Doctor diagnoses (reviews) a vital-signs record
+  diagnosis: { type: String, trim: true },
+  diagnosedBy: { type: Schema.Types.ObjectId, ref: "User" },
+  diagnosedAt: { type: Date },
 });
 
 const ScheduledDoseSchema = new Schema({

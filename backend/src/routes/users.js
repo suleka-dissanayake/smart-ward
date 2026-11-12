@@ -5,12 +5,13 @@ import { protect, authorize } from "../middleware/auth.js";
 import { createError } from "../middleware/errorHandler.js";
 
 import Patient from "../models/Patient.js";
+import Ward from "../models/Ward.js";
 const router = Router();
 router.use(protect);
 
 router.get("/", authorize("admin"), async (_req, res, next) => {
   try {
-    const users = await User.find().sort({ createdAt: -1 });
+    const users = await User.find().populate("ward", "name").populate("managedBy", "name").sort({ createdAt: -1 });
     res.json({ success: true, count: users.length, data: users });
   } catch (err) {
     next(err);
@@ -19,7 +20,7 @@ router.get("/", authorize("admin"), async (_req, res, next) => {
 
 router.get("/doctors", async (_req, res, next) => {
   try {
-    const doctors = await User.find({ role: "doctor", status: "Active" }).select("name department");
+    const doctors = await User.find({ role: "doctor", status: "Active" }).select("name department ward");
     res.json({ success: true, data: doctors });
   } catch (err) {
     next(err);
@@ -28,7 +29,7 @@ router.get("/doctors", async (_req, res, next) => {
 
 router.get("/nurses", async (_req, res, next) => {
   try {
-    const nurses = await User.find({ role: "nurse", status: "Active" }).select("name department");
+    const nurses = await User.find({ role: "nurse", status: "Active" }).select("name department ward");
     res.json({ success: true, data: nurses });
   } catch (err) {
     next(err);
@@ -37,7 +38,7 @@ router.get("/nurses", async (_req, res, next) => {
 
 router.get("/:id", authorize("admin"), async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(req.params.id).populate("ward", "name").populate("managedBy", "name");
     if (!user) return next(createError("User not found", 404));
     res.json({ success: true, data: user });
   } catch (err) {
@@ -53,7 +54,7 @@ router.post(
     body("email").isEmail().normalizeEmail(),
     body("password").isLength({ min: 6 }),
     body("role").isIn(["doctor", "nurse", "admin"]),
-    body("department").notEmpty().trim(),
+    body("department").if(body("role").not().equals("admin")).notEmpty().trim(),
   ],
   async (req, res, next) => {
     const errors = validationResult(req);
@@ -63,7 +64,19 @@ router.post(
       const exists = await User.findOne({ email: req.body.email });
       if (exists) return next(createError("Email already in use", 409));
 
-      const user = await User.create(req.body);
+      const { name, email, password, role, department, ward, status } = req.body;
+      const isStaff = role !== "admin";
+      if (isStaff && ward && !(await Ward.exists({ _id: ward }))) return next(createError("Ward not found", 400));
+
+      // ER: Admin manages Doctor/Nurse — the creating admin becomes their manager; Ward has Doctor/Nurse.
+      const user = await User.create({
+        name,
+        email,
+        password,
+        role,
+        status,
+        ...(isStaff ? { department, ward: ward || undefined, managedBy: req.user._id } : {}),
+      });
       res.status(201).json({ success: true, data: user });
     } catch (err) {
       next(err);
@@ -96,7 +109,24 @@ router.patch("/:id", authorize("admin"), async (req, res, next) => {
           );
       }
     }
-    const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
+    // Whitelist the editable fields; the ward (ER: Ward has Doctor/Nurse) can be set or cleared.
+    const set = {};
+    for (const k of ["name", "email", "role", "department", "status"])
+      if (updates[k] !== undefined) set[k] = updates[k];
+    const change = { $set: set };
+    if (updates.ward !== undefined) {
+      if (updates.ward) {
+        if (!(await Ward.exists({ _id: updates.ward }))) return next(createError("Ward not found", 400));
+        set.ward = updates.ward;
+      } else {
+        change.$unset = { ward: "" };
+      }
+    }
+    if (set.role === "admin") change.$unset = { ...change.$unset, ward: "", managedBy: "" }; // admins have no ward/manager
+
+    const user = await User.findByIdAndUpdate(req.params.id, change, { new: true, runValidators: true })
+      .populate("ward", "name")
+      .populate("managedBy", "name");
     if (!user) return next(createError("User not found", 404));
     res.json({ success: true, data: user });
   } catch (err) {
