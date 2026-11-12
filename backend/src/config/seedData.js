@@ -1,17 +1,26 @@
 // Shared seeding logic — used by both `npm run seed` (CLI) and POST /api/seed (HTTP).
 import User from "../models/User.js";
 import Ward from "../models/Ward.js";
+import Bed from "../models/Bed.js";
 import Patient from "../models/Patient.js";
 import Notification from "../models/Notification.js";
 
-const makeBeds = (prefix, count) =>
+// Beds are their own collection (ER: Ward 1 —has— M Bed).
+const makeBeds = (ward, prefix, count) =>
   Array.from({ length: count }, (_, i) => ({
+    ward,
     bedNumber: `${prefix}-${String(i + 1).padStart(2, "0")}`,
     isOccupied: false,
   }));
 
 export async function clearDatabase() {
-  await Promise.all([User.deleteMany({}), Ward.deleteMany({}), Patient.deleteMany({}), Notification.deleteMany({})]);
+  await Promise.all([
+    User.deleteMany({}),
+    Ward.deleteMany({}),
+    Bed.deleteMany({}),
+    Patient.deleteMany({}),
+    Notification.deleteMany({}),
+  ]);
 }
 
 export async function seedDatabase(log = () => {}) {
@@ -71,19 +80,40 @@ export async function seedDatabase(log = () => {}) {
       email: "ibrahim.hassan@smartward.health",
       password: "admin123",
       role: "admin",
-      department: "Administration",
       status: "Active",
     },
   ]);
   log("Users created (7)");
 
+  // ER: Admin manages Ward. Each ward is managed by the admin who set it up.
   const [medWard, surgWard, cardWard, respWard] = await Ward.create([
-    { name: "Medical Ward A", totalBeds: 20, beds: makeBeds("A", 20) },
-    { name: "Surgical Ward B", totalBeds: 16, beds: makeBeds("B", 16) },
-    { name: "Cardiac Ward C", totalBeds: 12, beds: makeBeds("C", 12) },
-    { name: "Respiratory Ward D", totalBeds: 10, beds: makeBeds("D", 10) },
+    { name: "Medical Ward A", description: "General medicine", managedBy: ibrahim._id },
+    { name: "Surgical Ward B", description: "Pre- and post-operative care", managedBy: ibrahim._id },
+    { name: "Cardiac Ward C", description: "Cardiology and telemetry", managedBy: ibrahim._id },
+    { name: "Respiratory Ward D", description: "Respiratory medicine", managedBy: ibrahim._id },
+  ]);
+  await Bed.insertMany([
+    ...makeBeds(medWard._id, "A", 20),
+    ...makeBeds(surgWard._id, "B", 16),
+    ...makeBeds(cardWard._id, "C", 12),
+    ...makeBeds(respWard._id, "D", 10),
   ]);
   log("Wards created (4)");
+  log("Beds created (58)");
+
+  // ER: Ward has Doctor / Nurse, and Admin manages Doctor / Nurse.
+  const staffWard = [
+    [ahmed, medWard],
+    [sarah, surgWard],
+    [yusuf, cardWard],
+    [aisha, medWard],
+    [james, surgWard],
+    [leila, respWard],
+  ];
+  for (const [staff, ward] of staffWard) {
+    await User.updateOne({ _id: staff._id }, { ward: ward._id, managedBy: ibrahim._id });
+  }
+  log("Staff assigned to wards (6)");
 
   const patients = await Patient.create([
     {
@@ -518,19 +548,38 @@ export async function seedDatabase(log = () => {}) {
   ]);
   log(`Patients created (${patients.length})`);
 
-  // Mark occupied beds and link each bed to its patient.
-  // (Done in memory + save() so it doesn't depend on MongoDB arrayFilters support.)
-  const wards = await Ward.find();
-  for (const ward of wards) {
-    for (const patient of patients) {
-      if (String(patient.ward) !== String(ward._id)) continue;
-      const bed = ward.beds.find((b) => b.bedNumber === patient.bed);
-      if (!bed) throw new Error(`Seed data error: bed ${patient.bed} not found in ${ward.name}`);
-      bed.isOccupied = true;
-      bed.patientId = patient._id;
-    }
-    await ward.save();
+  // ER: Bed holds Patient — mark each patient's bed occupied and link it.
+  for (const patient of patients) {
+    const bed = await Bed.findOneAndUpdate(
+      { ward: patient.ward, bedNumber: patient.bed },
+      { isOccupied: true, patientId: patient._id }
+    );
+    if (!bed) throw new Error(`Seed data error: bed ${patient.bed} not found for ${patient.name}`);
   }
+
+  // ER: Doctor diagnoses Vital signs — the treating doctor has reviewed some recorded vitals.
+  const [mohammed, , omar, , khalid] = patients;
+  const diagnose = (patient, index, text, hoursAfter = 2) => {
+    const v = patient.vitals[index];
+    v.diagnosis = text;
+    v.diagnosedBy = patient.assignedDoctor;
+    v.diagnosedAt = new Date(v.recordedAt.getTime() + hoursAfter * 3_600_000);
+  };
+  mohammed.vitals.push({
+    temperature: "37.2°C",
+    bloodPressure: "164/100 mmHg",
+    pulse: "92 bpm",
+    respiratoryRate: "19/min",
+    spo2: "96%",
+    painScore: 4,
+    recordedAt: new Date("2026-08-15T19:30:00"),
+    recordedBy: aisha._id,
+  });
+  diagnose(mohammed, 0, "BP still above target on current regimen; continue Amlodipine and review renal function.");
+  diagnose(mohammed, 1, "Marked hypertension — start Amlodipine, recheck in 12 hours.", 1);
+  diagnose(khalid, 0, "Reduced oxygen saturation with fluid overload — increase Furosemide, continuous monitoring.", 1);
+  diagnose(omar, 0, "Mild wheeze, improving with nebulisation. Continue current plan.");
+  for (const p of [mohammed, khalid, omar]) await p.save();
   log("Bed occupancy updated");
 
   await Notification.create([

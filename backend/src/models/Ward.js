@@ -1,27 +1,14 @@
 import mongoose, { Schema } from "mongoose";
 
-const BedSchema = new Schema({
-  bedNumber: { type: String, required: true },
-  isOccupied: { type: Boolean, default: false },
-  patientId: { type: Schema.Types.ObjectId, ref: "Patient" },
-});
-
+// ER: Admin 1 —manages— M Ward.  Beds live in their own collection (see Bed.js);
+// total beds / occupied beds are derived from it (see utils/wards.js), so they can never drift.
 const WardSchema = new Schema(
   {
     name: { type: String, required: true, unique: true, trim: true },
     description: { type: String, trim: true },
-    totalBeds: { type: Number, required: true, min: 1 },
-    beds: { type: [BedSchema], default: [] },
+    managedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );
-
-WardSchema.virtual("occupiedBeds").get(function () {
-  if (!this.beds) 
-    return undefined;
-  return this.beds.filter((b) => b.isOccupied).length;
-});
-
-WardSchema.set("toJSON", { virtuals: true });
 
 export default mongoose.model("Ward", WardSchema);
