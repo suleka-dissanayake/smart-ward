@@ -1,6 +1,7 @@
 import { Router } from "express";
 import Patient from "../models/Patient.js";
 import Ward from "../models/Ward.js";
+import Bed from "../models/Bed.js";
 import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 import { protect } from "../middleware/auth.js";
@@ -49,13 +50,11 @@ router.get("/", async (req, res, next) => {
       }),
     ]);
 
-    const wards = await Ward.find().select("name totalBeds beds");
-    const wardSummary = wards.map((w) => ({
-      id: w._id,
-      name: w.name,
-      totalBeds: w.totalBeds,
-      occupiedBeds: w.beds.filter((b) => b.isOccupied).length,
-    }));
+    const [wards, beds] = await Promise.all([Ward.find().select("name"), Bed.find().select("ward isOccupied")]);
+    const wardSummary = wards.map((w) => {
+      const mine = beds.filter((b) => String(b.ward) === String(w._id));
+      return { id: w._id, name: w.name, totalBeds: mine.length, occupiedBeds: mine.filter((b) => b.isOccupied).length };
+    });
 
     res.json({
       success: true,
